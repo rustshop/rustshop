@@ -14,9 +14,10 @@
   outputs = { self, nixpkgs, flake-utils, flake-compat}:
     flake-utils.lib.eachDefaultSystem (system:
     let
-      imp = (import ./utils/aws-bootstrap/default.nix);
-      overlay = self: super: {
-        aws-bootstrap = builtins.trace ''${imp}'' imp.default;
+      overlay = self: super: let
+        imp = (import ./utils/aws-bootstrap/default-system.nix) system;
+      in {
+        aws-bootstrap = builtins.trace imp imp.default;
       };
       pkgs = import nixpkgs {
         inherit system;
