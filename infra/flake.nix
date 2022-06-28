@@ -14,21 +14,17 @@
   outputs = { self, nixpkgs, flake-utils, flake-compat}:
     flake-utils.lib.eachDefaultSystem (system:
     let
-      overlay = self: super: let
-        imp = (import ./utils/aws-bootstrap/default-system.nix) system;
-      in {
-        aws-bootstrap = builtins.trace imp imp.default;
-      };
       pkgs = import nixpkgs {
         inherit system;
-        overlays = [ overlay ];
       };
     in {
       devShell = pkgs.mkShell {
-        buildInputs = [
+        buildInputs = let
+        aws-bootstrap-pkgs = (import ./utils/aws-bootstrap/default-system.nix) system;
+        in [
           pkgs.terraform
           pkgs.awscli2
-          pkgs.aws-bootstrap
+          aws-bootstrap-pkgs.default
         ];
       };
   });
