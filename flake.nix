@@ -10,9 +10,13 @@
       flake = false;
     };
 
+    infra = {
+      url = "./infra/";
+    };
+
   };
 
-  outputs = { self,  nixpkgs, flake-utils, flake-compat}:
+  outputs = { self, nixpkgs, flake-utils, flake-compat, infra}:
     flake-utils.lib.eachDefaultSystem (system:
     let
       pkgs = import nixpkgs {
