@@ -210,4 +210,22 @@ impl Aws {
             ])?
             .ok_or_else(|| eyre!("Could not assume root role for {}", account.name))?)
     }
+
+    pub fn deploy_cf(&self, stack_name: &str, path: &std::path::Path) -> Result<()> {
+        self.run_cmd_raw(&[
+            "cloudformation",
+            "deploy",
+            "--template-file",
+            // &String::from_utf8(path.as_os_str().as_bytes())?,
+            path.to_str()
+                .ok_or_else(|| eyre!("Incorrect path: {}", path.display()))?,
+            "--stack-name",
+            stack_name,
+            "--capabilities",
+            "CAPABILITY_NAMED_IAM",
+        ])?
+        .ok_or_else(|| eyre!("Could nod deploy cloudformation stack {stack_name}"))?;
+
+        Ok(())
+    }
 }

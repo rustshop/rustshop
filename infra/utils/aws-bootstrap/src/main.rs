@@ -119,7 +119,13 @@ fn main() -> Result<()> {
         break;
     }
 
-    deploy_cf_bootrap(&aws, &root_account.id, cf_bootstrap_file.path())?;
+    info!("All accounts ready");
+
+    info!("Deploying CF template to {}", root_account.name);
+    aws.deploy_cf(
+        &format!("{}-bootstrap", root_account.name),
+        cf_bootstrap_file.path(),
+    )?;
 
     for account_name_suffix in &opts.accounts {
         let full_account_name = format!("{}-{}", opts.base_account_name, account_name_suffix);
@@ -127,17 +133,13 @@ fn main() -> Result<()> {
             .iter()
             .find(|acc| acc.name == full_account_name)
             .ok_or_else(|| eyre!("Could not look up account {full_account_name} ID"))?;
+        info!("Deploying CF template to {}", account.name);
         let role = aws.assume_account_root_role(&account)?;
-        deploy_cf_bootrap(
-            &aws.with_creds(role.credentials.clone()),
-            &account.name,
+        aws.with_creds(role.credentials.clone()).deploy_cf(
+            &format!("{}-bootstrap", account.name),
             cf_bootstrap_file.path(),
         )?;
     }
 
-    Ok(())
-}
-
-fn deploy_cf_bootrap(_aws: &Aws, _account_full_name: &str, _path: &std::path::Path) -> Result<()> {
     Ok(())
 }
