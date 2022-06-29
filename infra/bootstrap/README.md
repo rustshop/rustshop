@@ -22,10 +22,18 @@ In our case the emails are `infra+<labels>@rustshop.org`.
 
 ### Create your root account
 
-In our case the `<shopname>` will be `rustshop`.
+Pick a `shopname`, this will be used in a cuple of places.
+It should have a solid chance to be unique, otherwise you risk
+into running into name conflicts for globally unique resource
+names (like S3 Buckets).
+
+In our case the `<shopname>` is `rustshop`.
 
 Name it `<shopname>-root` and use `infra+root@<domain>` as the
-contact email. Set a good random password.
+contact email. Set a strong password.
+
+You might want to watch https://learn.cantrill.io/courses/730712/lectures/24950112
+for some relevant instruction.
 
 Add MFA for this account. Seriously. You do not want to pay a lot
 of money because your password leaked and now your account is mining
@@ -34,11 +42,19 @@ some crypto.
 Create an initial "Cost Budget", and add an alert in it. If anything goes
 wrong you want to know that you're paying more than expected.
 
+Create `iamadmin` IAM admin user with `AdministratorAccess` policy. Make sure
+to allow it "Access key - Programmatic access" -
+we are going to need it soon. You might want to watch
+https://learn.cantrill.io/courses/730712/lectures/24950119 for instructions.
 
-Though it isn't stricly neccessary, if you are like me and AWS is a bit new
-to you If you want to learn more about AWS, consider enrolling into
+If you selected "Access key - Programmatic access" option, you should be presented
+with access keys details. Store it somewhere safe locally.
+
+Though it isn't strictly necessary, but if you are like me and AWS is a bit new
+to you  consider enrolling into
 [Adrian Cantrill's AWS Certified Solutions Architect - Associate course](https://learn.cantrill.io/p/aws-certified-solutions-architect-associate-saa-c02).
-Just the few first lessons should give you a good overview.
+The helpful videos linked above are the freely accessible parts of the
+much larger course, and I can highly recommend it.
 
 ### Bootstrap your infra
 
@@ -47,18 +63,18 @@ This is the time where automation takes over.
 Make sure to clone your repo and set up Nix as in [Onboarding document](../../ONBOARDING.md)
 
 ```
+$ git clone https://github.com/rustshop/rustshop <shopname>
 $ cd <shopname>/infra  # change dir to infra inside the cloned repo
 $ nix develop          # get the shell with all the infra tools you might need
 ```
 
-### Generate aws credentials and set up `aws` command profile
-
-Log into your AWS and generate access key. It will be used to
-bootstrap your AWS account with starting sub-orgs and things
-neccessary for self-hosting Terraform.
+### Set up `aws` command profile
 
 `aws` command should be available in shell and you can configure a profile
 using `aws configure --profile <shopname>` like this:
+
+Make sure the credentials here are from the IAM `iamadmin` user,
+and not from the root account root user!
 
 ```
 ~/l/r/infra (main)> aws configure --profile rustshop

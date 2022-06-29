@@ -23,8 +23,8 @@ Help and feedback: https://github.com/rustshop/rustshop/discussions/categories/h
 )]
 pub struct Opts {
     /// AWS profile to use when calling `aws` CLI
-    #[clap(long = "profile", env = "AWS_PROFILE", default_value = "default")]
-    pub profile: String,
+    #[clap(long = "profile", env = "AWS_PROFILE")]
+    pub profile: Option<String>,
 
     /// Base name of the account to bootstrap
     ///
@@ -32,7 +32,7 @@ pub struct Opts {
     #[clap(long = "base")]
     pub base_account_name: String,
 
-    /// (sub) accounts to bootstrap
+    /// comma-separate list of (sub-)accounts to create and bootstrap
     #[clap(
         long = "accounts",
         multiple = true,

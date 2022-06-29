@@ -1,10 +1,39 @@
 use std::process::Command;
 
-use crate::opts::Opts;
 use color_eyre::Result;
 use eyre::{bail, eyre};
 use serde::{de::DeserializeOwned, Deserialize};
 use tracing::{debug, trace};
+
+#[derive(Deserialize, Debug, Clone)]
+#[serde(rename_all(deserialize = "PascalCase"))]
+pub struct CallerIdentity {
+    pub user_id: String,
+    pub arn: String,
+    pub account: String,
+}
+
+#[derive(Deserialize, Debug, Clone)]
+#[serde(rename_all(deserialize = "PascalCase"))]
+pub struct Credentials {
+    pub session_token: String,
+    pub access_key_id: String,
+    pub secret_access_key: String,
+}
+
+#[derive(Deserialize, Debug, Clone)]
+#[serde(rename_all(deserialize = "PascalCase"))]
+pub struct AssumedRoleUser {
+    pub assumed_role_id: String,
+    pub arn: String,
+}
+
+#[derive(Deserialize, Debug, Clone)]
+#[serde(rename_all(deserialize = "PascalCase"))]
+pub struct AssumedRole {
+    pub credentials: Credentials,
+    pub assumed_role_user: AssumedRoleUser,
+}
 
 #[derive(Deserialize, Debug, Clone)]
 #[serde(rename_all(deserialize = "SCREAMING_SNAKE_CASE"))]
@@ -44,89 +73,141 @@ pub struct OrganizationDetails {
     pub organization: Organization,
 }
 
-fn run_cmd<T>(opts: &Opts, args: &[&str]) -> Result<Option<T>>
-where
-    T: DeserializeOwned,
-{
-    let output = run_cmd_raw(opts, args)?;
-    Ok(if let Some(output) = output {
-        Some(serde_json::from_slice(&output)?)
-    } else {
-        None
-    })
+#[derive(Clone, Debug)]
+pub struct Aws {
+    profile: Option<String>,
+    credentials: Option<Credentials>,
 }
 
-fn run_cmd_raw(opts: &Opts, args: &[&str]) -> Result<Option<Vec<u8>>> {
-    let output = {
-        let mut cmd = Command::new("aws");
-
-        let cmd = cmd.arg("--profile").arg(&opts.profile).args(args);
-
-        trace!("Running: {:?}", cmd);
-        cmd.output()?
-    };
-
-    trace!("Status code: {:?}", output.status.code());
-    debug!("Stdout: {}", String::from_utf8_lossy(&output.stdout));
-    debug!("Stderr: {}", String::from_utf8_lossy(&output.stderr));
-
-    // 254 seems to indicate non-fatal error, like
-    if output.status.code().unwrap_or(-1) == 254 {
-        return Ok(None);
+impl Aws {
+    pub fn new(profile: Option<String>) -> Self {
+        Self {
+            profile,
+            credentials: None,
+        }
     }
 
-    if !output.status.success() {
-        bail!(
-            "Command failed with:\n{}",
-            String::from_utf8_lossy(&output.stderr)
-        );
+    pub fn with_creds(&self, cred: Credentials) -> Self {
+        Self {
+            credentials: Some(cred),
+            ..self.clone()
+        }
     }
 
-    Ok(Some(output.stdout))
-}
+    fn run_cmd<T>(&self, args: &[&str]) -> Result<Option<T>>
+    where
+        T: DeserializeOwned,
+    {
+        let output = self.run_cmd_raw(args)?;
+        Ok(if let Some(output) = output {
+            Some(serde_json::from_slice(&output)?)
+        } else {
+            None
+        })
+    }
 
-pub fn create_or_get_organization(opts: &Opts) -> Result<Organization> {
-    Ok(
-        match run_cmd::<OrganizationDetails>(
-            &opts,
-            &[
+    fn run_cmd_raw(&self, args: &[&str]) -> Result<Option<Vec<u8>>> {
+        let output = {
+            let mut cmd = Command::new("aws");
+            let mut cmd = &mut cmd;
+
+            if let Some(creds) = self.credentials.as_ref() {
+                cmd = cmd
+                    .env("AWS_SESSION_TOKEN", &creds.session_token)
+                    .env("AWS_ACCESS_KEY_ID", &creds.access_key_id)
+                    .env("AWS_SECRET_ACCESS_KEY", &creds.secret_access_key);
+            }
+
+            if let Some(profile) = self.profile.as_ref() {
+                cmd = cmd.arg("--profile").arg(profile);
+            }
+
+            let cmd = cmd.args(args);
+
+            trace!("Running: {:?}", cmd);
+            cmd.output()?
+        };
+
+        trace!("Status code: {:?}", output.status.code());
+        debug!("Stdout: {}", String::from_utf8_lossy(&output.stdout));
+        debug!("Stderr: {}", String::from_utf8_lossy(&output.stderr));
+
+        // 254 seems to indicate non-fatal error, like
+        if output.status.code().unwrap_or(-1) == 254 {
+            return Ok(None);
+        }
+
+        if !output.status.success() {
+            bail!(
+                "Command failed with:\n{}",
+                String::from_utf8_lossy(&output.stderr)
+            );
+        }
+
+        Ok(Some(output.stdout))
+    }
+
+    pub fn create_or_get_organization(&self) -> Result<Organization> {
+        Ok(
+            match self.run_cmd::<OrganizationDetails>(&[
                 "organizations",
                 "create-organization",
                 "--feature-set",
                 "ALL",
-            ],
-        )? {
-            Some(org) => org.organization,
-            None => {
-                run_cmd::<OrganizationDetails>(&opts, &["organizations", "describe-organization"])?
+            ])? {
+                Some(org) => org.organization,
+                None => {
+                    self.run_cmd::<OrganizationDetails>(&[
+                        "organizations",
+                        "describe-organization",
+                    ])?
                     .ok_or_else(|| eyre!("Failed to create/fetch existing organization details"))?
                     .organization
-            }
-        },
-    )
-}
+                }
+            },
+        )
+    }
 
-pub(crate) fn list_existing_accouns(opts: &Opts) -> Result<Vec<Account>> {
-    Ok(
-        run_cmd::<AccountList>(&opts, &["organizations", "list-accounts"])?
+    pub(crate) fn list_existing_accouns(&self) -> Result<Vec<Account>> {
+        Ok(self
+            .run_cmd::<AccountList>(&["organizations", "list-accounts"])?
             .ok_or_else(|| eyre!("Could not get list of accounts"))?
-            .accounts,
-    )
-}
+            .accounts)
+    }
 
-pub(crate) fn create_account(opts: &Opts, account_name: &str, email: &str) -> Result<String> {
-    Ok(String::from_utf8(
-        run_cmd_raw(
-            &opts,
-            &[
+    pub(crate) fn create_account(&self, account_name: &str, email: &str) -> Result<String> {
+        Ok(String::from_utf8(
+            self.run_cmd_raw(&[
                 "organizations",
                 "create-account",
                 "--email",
                 &email,
                 "--account-name",
                 account_name,
-            ],
-        )?
-        .ok_or_else(|| eyre!("Failed to create account: {account_name}"))?,
-    )?)
+            ])?
+            .ok_or_else(|| eyre!("Failed to create account: {account_name}"))?,
+        )?)
+    }
+
+    pub(crate) fn get_caller_identity(&self) -> Result<CallerIdentity> {
+        Ok(self
+            .run_cmd(&["sts", "get-caller-identity"])?
+            .ok_or_else(|| eyre!("Failed to check account identity"))?)
+    }
+
+    pub(crate) fn assume_account_root_role(&self, account: &Account) -> Result<AssumedRole> {
+        Ok(self
+            .run_cmd::<AssumedRole>(&[
+                "sts",
+                "assume-role",
+                "--role-session-name",
+                &account.name,
+                "--role-arn",
+                &format!(
+                    "arn:aws:iam::{}:role/OrganizationAccountAccessRole",
+                    account.id
+                ),
+            ])?
+            .ok_or_else(|| eyre!("Could not assume root role for {}", account.name))?)
+    }
 }
