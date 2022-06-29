@@ -49,6 +49,7 @@ version = "0.1.0"
 dependencies = [
  "clap",
  "color-eyre",
+ "eyre",
  "serde",
  "serde_json",
  "tracing",
