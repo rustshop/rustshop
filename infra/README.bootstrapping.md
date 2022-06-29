@@ -60,7 +60,7 @@ much larger course, and I can highly recommend it.
 
 This is the time where automation takes over.
 
-Make sure to clone your repo and set up Nix as in [Onboarding document](../../ONBOARDING.md)
+Make sure to clone your repo and set up Nix as in [Onboarding document](../README.onboarding.md)
 
 ```
 $ git clone https://github.com/rustshop/rustshop <shopname>
