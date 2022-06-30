@@ -2,6 +2,15 @@
 name = "aws-bootstrap"
 version = "0.1.0"
 edition = "2021"
+authors = ["Dawid Ciężarkiewicz <dpc@dpc.pw>"]
+description = "Bootstrap a minimal self-hosted Terraform setup on an AWS account, using CloudFormation stack."
+documentation = "https://github.com/rustshop/rustshop/tree/main/infra/utils/aws-bootstrap"
+homepage = "https://github.com/rustshop/rustshop/tree/main/infra/utils/aws-bootstrap"
+keywords = ["tool"]
+license = "MPL-2.0"
+readme = "README.md"
+repository = "https://github.com/rustshop/rustshop"
+rust-version = "1.58" # cost of latest cargo
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

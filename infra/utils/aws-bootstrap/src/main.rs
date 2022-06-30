@@ -1,8 +1,5 @@
-#![feature(exit_status_error)]
-
 use std::{io::Write, time::Duration};
 
-use aws_api::Aws;
 use color_eyre::{eyre, Result};
 use eyre::{bail, eyre};
 use tempfile::NamedTempFile;
