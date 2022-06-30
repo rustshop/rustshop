@@ -11,6 +11,8 @@ The basic technologies used are:
 * Terraform (for infrastructure automation)
 
 See [Tech Stack README](./README.techstack.md) for more details.
+Subscribe to [Status Updates](https://github.com/rustshop/rustshop/discussions/6)
+to track project progress.
 
 Even though the aim is to be heavily Rust-oriented, RustShop should be
 helpful for setting up cloud-based applications using other programming
