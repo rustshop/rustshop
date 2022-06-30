@@ -1,8 +1,1 @@
-if [ -z "$TF_VAR_SHOPNAME" ]; then
-  echo '"TF_VAR_SHOPNAME" not set. Edit .env and try again.' 1>&2
-  exit 1
-fi
-
-if [ -z "$TF_VAR_AWS_ACCOUNT_ID_ROOT" ]; then
-  echo '"TF_VAR_AWS_ACCOUNT_ID_ROOT" not initialized. Edit variables in .env after creating AWS accounts.' 1>&2
-fi
+# Use to customize your shell

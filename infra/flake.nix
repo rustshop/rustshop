@@ -23,28 +23,17 @@
           buildInputs =
             let
               aws-bootstrap-pkgs = (import ./utils/aws-bootstrap/default-system.nix) system;
+              terraform-wrapper-pkgs = (import ./utils/terraform-wrapper/default-system.nix) system;
             in
             [
               pkgs.terraform
               pkgs.awscli2
               aws-bootstrap-pkgs.default
+              terraform-wrapper-pkgs.default
             ];
 
           shellHook = ''
-            export PATH="$PWD/utils:$PATH"
-            # Initialize variable files from templates
-            if [ ! -e ".env" ]; then
-              echo 'Creating .env' 1>&2
-              cp .env.template .env
-            fi
-            if [ ! -e ".shrc" ]; then
-              echo 'Creating .shrc' 1>&2
-              cp .shrc.template .shrc
-            fi
-            set -a
-            . ./.env
-            set +a
-            . ./.shrc
+            . ${./utils/shell-hook.sh}
           '';
         };
       });
