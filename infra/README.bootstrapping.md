@@ -71,13 +71,13 @@ $ nix develop          # get the shell with all the infra tools you might need
 ### Set up `aws` command profile
 
 `aws` command should be available in shell and you can configure a profile
-using `aws configure --profile <shopname>` like this:
+using `aws configure --profile <shopname>-root` like this:
 
 Make sure the credentials here are from the IAM `iamadmin` user,
 and not from the root account root user!
 
 ```
-~/l/r/infra (main)> aws configure --profile rustshop
+~/l/r/infra (main)> aws configure --profile rustshop-root
 AWS Access Key ID [None]: SOMEKEYIDYOUVEGOT
 AWS Secret Access Key [None]: SomeSecretKey1ThatAmazonProduced
 Default region name [None]: us-east-1
@@ -94,7 +94,7 @@ and what is going on.
 Run:
 
 ```
-aws-bootstrap --base <shopname> --profile <shopname> --email infra@<domain>
+aws-bootstrap --base <shopname> --profile <shopname>-root --email infra@<domain>
 ```
 
 Follow the output, and in case of any issues

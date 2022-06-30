@@ -1,0 +1,17 @@
+#!/bin/bash
+
+if [ -z "$1" ]; then
+  echo "Must pass account suffix (eg. dev or prod)" 1>&2
+  exit 1
+fi
+
+account_name="${TF_VAR_SHOPNAME}-$1"
+shift
+
+exec terraform init \
+  -backend-config "bucket=${account_name}-bootstrap-terraform" \
+  -backend-config "key=state/${account_name}.tfstate" \
+  -backend-config "dynamodb_table=${account_name}-bootstrap-terraform" \
+  -backend-config "region=${TF_VAR_AWS_REGION}" \
+  -backend-config "profile=${account_name}" \
+  "$@"
