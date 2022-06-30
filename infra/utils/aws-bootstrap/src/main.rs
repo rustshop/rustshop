@@ -138,5 +138,10 @@ fn main() -> Result<()> {
         )?;
     }
 
+    eprintln!("Account IDs:");
+    for account in &existing_accounts {
+        println!("{}: {}", account.name, account.id);
+    }
+
     Ok(())
 }

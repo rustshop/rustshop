@@ -22,22 +22,22 @@ In our case the emails are `infra+<labels>@rustshop.org`.
 
 ### Create your root account
 
-Pick a `shopname`, this will be used in a cuple of places.
+Pick a `<shopname>`. This will be used in a cuple of places.
 It should have a solid chance to be unique, otherwise you risk
 into running into name conflicts for globally unique resource
 names (like S3 Buckets).
 
 In our case the `<shopname>` is `rustshop`.
 
-Name it `<shopname>-root` and use `infra+root@<domain>` as the
-contact email. Set a strong password.
+Name the AWS account `<shopname>-root` and use `infra+root@<domain>`
+as the contact email. Set a strong password.
 
 You might want to watch https://learn.cantrill.io/courses/730712/lectures/24950112
 for some relevant instruction.
 
-Add MFA for this account. Seriously. You do not want to pay a lot
-of money because your password leaked and now your account is mining
-some crypto.
+Add MFA for this account. Seriously - always set MFA on all your accounts.
+You do not want to pay a lot of money because your password leaked and now
+your account is mining some crypto.
 
 Create an initial "Cost Budget", and add an alert in it. If anything goes
 wrong you want to know that you're paying more than expected.
@@ -48,7 +48,7 @@ we are going to need it soon. You might want to watch
 https://learn.cantrill.io/courses/730712/lectures/24950119 for instructions.
 
 If you selected "Access key - Programmatic access" option, you should be presented
-with access keys details. Store it somewhere safe locally.
+with access keys details. Keep it around safe locally. It will be need soon.
 
 Though it isn't strictly necessary, but if you are like me and AWS is a bit new
 to you  consider enrolling into
@@ -63,10 +63,13 @@ This is the time where automation takes over.
 Make sure to clone your repo and set up Nix as in [Onboarding document](../README.onboarding.md)
 
 ```
-$ git clone https://github.com/rustshop/rustshop <shopname>
-$ cd <shopname>/infra  # change dir to infra inside the cloned repo
-$ nix develop          # get the shell with all the infra tools you might need
+~$ git clone https://github.com/rustshop/rustshop <shopname>
+~$ cd <shopname>/infra  # change dir to infra inside the cloned repo
+infra$ nix develop          # get the shell with all the infra tools you might need
 ```
+
+`nix develop` might require you to perform some initial configuration. Please read
+the prompts.
 
 ### Set up `aws` command profile
 
@@ -76,8 +79,18 @@ using `aws configure --profile <shopname>-root` like this:
 Make sure the credentials here are from the IAM `iamadmin` user,
 and not from the root account root user!
 
+`nix develop` should have set your `$AWS_PROFILE` already:
+
 ```
-~/l/r/infra (main)> aws configure --profile rustshop-root
+infra$ nix develop
+Setting AWS_PROFILE=rustshop-root
+```
+
+so you can use just `aws configure`. Enter the access key information
+for IAM Admin User you created.
+
+```
+infra$ aws configure
 AWS Access Key ID [None]: SOMEKEYIDYOUVEGOT
 AWS Secret Access Key [None]: SomeSecretKey1ThatAmazonProduced
 Default region name [None]: us-east-1
@@ -94,7 +107,7 @@ and what is going on.
 Run:
 
 ```
-aws-bootstrap --base <shopname> --profile <shopname>-root --email infra@<domain>
+aws-bootstrap --base <shopname>  --email infra@<domain>
 ```
 
 Follow the output, and in case of any issues
@@ -103,3 +116,22 @@ Follow the output, and in case of any issues
 You might verify in the AWS Console, under Organizations product that and organization was
 created, with two sub-accounts: `<shopname>-prod` and `<shopname>-dev`. Your email account
 should also receive emails about it.
+
+Edit `.env` file with the acount ids returned by the `aws-bootstrap`.
+
+
+### Setup terraform
+
+Change directory to `account/root` and use `terraform init`:
+
+```
+infra$ cd account/root
+root$ terraform init
+[...] # should work
+root$ terraform plan
+[...] # should work
+root$ terraform apply
+[...] # should work
+```
+
+Initialize Terraform in other accounts: `dev` & `prod`
