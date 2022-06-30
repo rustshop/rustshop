@@ -10,7 +10,7 @@ The basic technologies used are:
 * AWS (for cloud hosting)
 * Terraform (for infrastructure automation)
 
-See [Tech Stack README](./README.techstack.md) for more details.
+See [Tech Stack](./README.techstack.md) for more details.
 Subscribe to [Status Updates](https://github.com/rustshop/rustshop/discussions/6)
 to track project progress.
 
@@ -19,16 +19,16 @@ helpful for setting up cloud-based applications using other programming
 languages.
 
 For fun and to have real-like general direction, RustShop pretends to be a real (fake)
-bussiness, trying to bring a startup collaboration realities.
-
-# RustShop
-
-Tired of not being able to find a Rust job? Join Rust Shop -
-our ambitious innovative fake company. Pretend you are delivering
-business value using Rust in your free time for no pay or benefits!
+bussiness, trying to bring startup collaboration realities.
 
 See [Welcome to Rust Shop](https://github.com/rustshop/rustshop/discussions/1)
 for more information about the idea and the project.
+
+# RustShop
+
+Tired of not being able to find a Rust job? Join RustShop -
+our ambitious innovative fake company. Pretend you are delivering
+business value using Rust in your free time for no pay or benefits!
 
 ## Links
 
