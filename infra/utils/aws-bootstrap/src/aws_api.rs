@@ -76,13 +76,15 @@ pub struct OrganizationDetails {
 #[derive(Clone, Debug)]
 pub struct Aws {
     profile: Option<String>,
+    region: String,
     credentials: Option<Credentials>,
 }
 
 impl Aws {
-    pub fn new(profile: Option<String>) -> Self {
+    pub fn new(profile: Option<String>, region: String) -> Self {
         Self {
             profile,
+            region,
             credentials: None,
         }
     }
@@ -94,11 +96,11 @@ impl Aws {
         }
     }
 
-    fn run_cmd<T>(&self, args: &[&str]) -> Result<Option<T>>
+    fn run_cmd<T>(&self, args: &[&str], ignore_254: bool) -> Result<Option<T>>
     where
         T: DeserializeOwned,
     {
-        let output = self.run_cmd_raw(args)?;
+        let output = self.run_cmd_raw(args, ignore_254)?;
         Ok(if let Some(output) = output {
             Some(serde_json::from_slice(&output)?)
         } else {
@@ -106,19 +108,19 @@ impl Aws {
         })
     }
 
-    fn run_cmd_raw(&self, args: &[&str]) -> Result<Option<Vec<u8>>> {
+    fn run_cmd_raw(&self, args: &[&str], ignore_254: bool) -> Result<Option<Vec<u8>>> {
         let output = {
             let mut cmd = Command::new("aws");
-            let mut cmd = &mut cmd;
+            let mut cmd = cmd.env("AWS_REGION", &self.region);
 
             if let Some(creds) = self.credentials.as_ref() {
                 cmd = cmd
                     .env("AWS_SESSION_TOKEN", &creds.session_token)
                     .env("AWS_ACCESS_KEY_ID", &creds.access_key_id)
-                    .env("AWS_SECRET_ACCESS_KEY", &creds.secret_access_key);
-            }
-
-            if let Some(profile) = self.profile.as_ref() {
+                    .env("AWS_SECRET_ACCESS_KEY", &creds.secret_access_key)
+                    .env_remove("AWS_PROFILE");
+            } else if let Some(profile) = self.profile.as_ref() {
+                // we only want to set profile if we are not using session tokens
                 cmd = cmd.arg("--profile").arg(profile);
             }
 
@@ -133,7 +135,7 @@ impl Aws {
         debug!("Stderr: {}", String::from_utf8_lossy(&output.stderr));
 
         // 254 seems to indicate non-fatal error, like
-        if output.status.code().unwrap_or(-1) == 254 {
+        if ignore_254 && output.status.code().unwrap_or(-1) == 254 {
             return Ok(None);
         }
 
@@ -149,18 +151,21 @@ impl Aws {
 
     pub fn create_or_get_organization(&self) -> Result<Organization> {
         Ok(
-            match self.run_cmd::<OrganizationDetails>(&[
-                "organizations",
-                "create-organization",
-                "--feature-set",
-                "ALL",
-            ])? {
+            match self.run_cmd::<OrganizationDetails>(
+                &[
+                    "organizations",
+                    "create-organization",
+                    "--feature-set",
+                    "ALL",
+                ],
+                true,
+            )? {
                 Some(org) => org.organization,
                 None => {
-                    self.run_cmd::<OrganizationDetails>(&[
-                        "organizations",
-                        "describe-organization",
-                    ])?
+                    self.run_cmd::<OrganizationDetails>(
+                        &["organizations", "describe-organization"],
+                        true,
+                    )?
                     .ok_or_else(|| eyre!("Failed to create/fetch existing organization details"))?
                     .organization
                 }
@@ -170,60 +175,69 @@ impl Aws {
 
     pub(crate) fn list_existing_accouns(&self) -> Result<Vec<Account>> {
         Ok(self
-            .run_cmd::<AccountList>(&["organizations", "list-accounts"])?
+            .run_cmd::<AccountList>(&["organizations", "list-accounts"], false)?
             .ok_or_else(|| eyre!("Could not get list of accounts"))?
             .accounts)
     }
 
     pub(crate) fn create_account(&self, account_name: &str, email: &str) -> Result<String> {
         Ok(String::from_utf8(
-            self.run_cmd_raw(&[
-                "organizations",
-                "create-account",
-                "--email",
-                &email,
-                "--account-name",
-                account_name,
-            ])?
+            self.run_cmd_raw(
+                &[
+                    "organizations",
+                    "create-account",
+                    "--email",
+                    &email,
+                    "--account-name",
+                    account_name,
+                ],
+                true,
+            )?
             .ok_or_else(|| eyre!("Failed to create account: {account_name}"))?,
         )?)
     }
 
     pub(crate) fn get_caller_identity(&self) -> Result<CallerIdentity> {
         Ok(self
-            .run_cmd(&["sts", "get-caller-identity"])?
+            .run_cmd(&["sts", "get-caller-identity"], false)?
             .ok_or_else(|| eyre!("Failed to check account identity"))?)
     }
 
     pub(crate) fn assume_account_root_role(&self, account: &Account) -> Result<AssumedRole> {
         Ok(self
-            .run_cmd::<AssumedRole>(&[
-                "sts",
-                "assume-role",
-                "--role-session-name",
-                &account.name,
-                "--role-arn",
-                &format!(
-                    "arn:aws:iam::{}:role/OrganizationAccountAccessRole",
-                    account.id
-                ),
-            ])?
+            .run_cmd::<AssumedRole>(
+                &[
+                    "sts",
+                    "assume-role",
+                    "--role-session-name",
+                    &account.name,
+                    "--role-arn",
+                    &format!(
+                        "arn:aws:iam::{}:role/OrganizationAccountAccessRole",
+                        account.id
+                    ),
+                ],
+                false,
+            )?
             .ok_or_else(|| eyre!("Could not assume root role for {}", account.name))?)
     }
 
     pub fn deploy_cf(&self, stack_name: &str, path: &std::path::Path) -> Result<()> {
-        self.run_cmd_raw(&[
-            "cloudformation",
-            "deploy",
-            "--template-file",
-            // &String::from_utf8(path.as_os_str().as_bytes())?,
-            path.to_str()
-                .ok_or_else(|| eyre!("Incorrect path: {}", path.display()))?,
-            "--stack-name",
-            stack_name,
-            "--capabilities",
-            "CAPABILITY_NAMED_IAM",
-        ])?
+        self.run_cmd_raw(
+            &[
+                "cloudformation",
+                "deploy",
+                "--template-file",
+                // &String::from_utf8(path.as_os_str().as_bytes())?,
+                path.to_str()
+                    .ok_or_else(|| eyre!("Incorrect path: {}", path.display()))?,
+                "--stack-name",
+                stack_name,
+                "--capabilities",
+                "CAPABILITY_NAMED_IAM",
+            ],
+            false,
+        )?
         .ok_or_else(|| eyre!("Could nod deploy cloudformation stack {stack_name}"))?;
 
         Ok(())

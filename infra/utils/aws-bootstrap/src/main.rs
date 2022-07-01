@@ -60,7 +60,7 @@ fn main() -> Result<()> {
     tracing::debug!("Opts: {opts:?}");
 
     let cf_bootstrap_file = create_cf_bootstrap_file()?;
-    let aws = aws_api::Aws::new(opts.profile.clone());
+    let aws = aws_api::Aws::new(opts.profile.clone(), opts.region.clone());
 
     let root_account_id = aws.get_caller_identity()?.account;
 

@@ -26,6 +26,10 @@ pub struct Opts {
     #[clap(long = "profile", env = "AWS_PROFILE")]
     pub profile: Option<String>,
 
+    /// AWS profile to use when calling `aws` CLI
+    #[clap(long = "region", env = "AWS_REGION")]
+    pub region: String,
+
     /// Base name of the account to bootstrap
     ///
     /// Usually your domain name without the TLD.
