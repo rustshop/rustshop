@@ -36,5 +36,9 @@ if [ -z "$AWS_PROFILE" ]; then
   echo "Setting AWS_PROFILE=${AWS_PROFILE}" 1>&2
 fi
 
+if [ -z "$AWS_REGION" ]; then
+  export AWS_REGION="us-east-1"
+  echo "Setting AWS_REGION=${AWS_REGION}" 1>&2
+fi
 # execute local customization script
 . ./.shrc

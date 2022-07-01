@@ -141,7 +141,7 @@ impl Aws {
 
         if !output.status.success() {
             bail!(
-                "Command failed with:\n{}",
+                "`aws` command failed with:\n{}",
                 String::from_utf8_lossy(&output.stderr)
             );
         }
