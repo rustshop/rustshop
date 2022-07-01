@@ -1,6 +1,6 @@
 [package]
 name = "aws-bootstrap"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 authors = ["Dawid Ciężarkiewicz <dpc@dpc.pw>"]
 description = "Bootstrap a minimal self-hosted Terraform setup on an AWS account, using CloudFormation stack."
