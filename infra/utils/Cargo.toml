@@ -1,0 +1,7 @@
+[workspace]
+members = [
+	"pkgs/terraform-wrapper",
+	"pkgs/env",
+	"pkgs/aws-bootstrap/",
+]
+

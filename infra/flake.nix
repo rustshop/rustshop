@@ -23,13 +23,15 @@
           buildInputs =
             let
               aws-bootstrap-pkgs = (import ./utils/aws-bootstrap/default-system.nix) system;
-              terraform-wrapper-pkgs = (import ./utils/terraform-wrapper/default-system.nix) system;
+              utils = (import ./utils/default-system.nix) system;
             in
             [
               pkgs.terraform
               pkgs.awscli2
-              aws-bootstrap-pkgs.default
-              terraform-wrapper-pkgs.default
+              pkgs.kops
+              pkgs.kubectl
+              utils.packages."${system}".terraform-wrapper
+              utils.packages."${system}".terraform-wrapper
             ];
 
           shellHook = ''

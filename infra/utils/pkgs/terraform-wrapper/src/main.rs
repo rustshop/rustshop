@@ -32,6 +32,7 @@ fn main() -> Result<()> {
     let mut cmd = cmd.args(args.skip(1));
 
     if use_init_workaround {
+        let _env = rustshop_env::Env::new_detect();
         info!("Triggering `terraform-wrapper` init workaround");
         let shop_name = std::env::var("TF_VAR_SHOPNAME")?;
         let account_suffix = std::env::current_dir()?

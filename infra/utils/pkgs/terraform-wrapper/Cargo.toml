@@ -10,3 +10,4 @@ color-eyre = { version = "0.6.1" }
 eyre = "0.6.8"
 tracing = "0.1.35"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+rustshop-env = { version = "*", path = "../env/" }
