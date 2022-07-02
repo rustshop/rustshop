@@ -32,6 +32,7 @@ fn main() -> Result<()> {
     let mut cmd = cmd.args(args.skip(1));
 
     if use_init_workaround {
+        info!("Triggering `terraform-wrapper` init workaround");
         let shop_name = std::env::var("TF_VAR_SHOPNAME")?;
         let account_suffix = std::env::current_dir()?
             .file_name()
@@ -57,6 +58,28 @@ fn main() -> Result<()> {
             // "-backend-config",
             // &format!("profile={account_name}"),
         ]);
+
+        let role_arn = if let Some(role_arn) = std::env::var("AWS_ASSUME_ROLE_ARN").ok() {
+            info!("Assuming role:`AWS_ASSUME_ROLE_ARN={role_arn}`");
+            Some(role_arn)
+        } else {
+            info!("Note: Set `AWS_ASSUME_ROLE_ARN` env var to force a Role");
+            let env_var_name = format!(
+                "TF_VAR_AWS_ACCOUNT_ID_{}_ROLE",
+                account_suffix.to_ascii_uppercase()
+            );
+            if let Some(role_arn) = std::env::var(&env_var_name).ok() {
+                info!("Assuming role: {env_var_name}={role_arn}");
+                Some(role_arn)
+            } else {
+                info!("No role used: {env_var_name} not set");
+                None
+            }
+        };
+
+        if let Some(role_arn) = role_arn {
+            cmd = cmd.args(&["-backend-config", &format!("role_arn={role_arn}")]);
+        }
     }
     Err(cmd.exec())?;
 

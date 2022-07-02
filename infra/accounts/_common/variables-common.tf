@@ -14,17 +14,32 @@ variable "AWS_REGION" {
 }
 
 variable "AWS_ACCOUNT_ID_ROOT" {
-  description = "AWS Account ID (ROOT)"
+  description = "AWS Account ID (root)"
+  default     = ""
+}
+
+variable "AWS_ACCOUNT_ID_ROOT_ROLE" {
+  description = "Role to assume for root account - if set"
   default     = ""
 }
 
 variable "AWS_ACCOUNT_ID_DEV" {
-  description = "AWS Account ID (DEV)"
+  description = "AWS Account ID (dev)"
+  default     = ""
+}
+
+variable "AWS_ACCOUNT_ID_DEV_ROLE" {
+  description = "Role to assume for dev account - if set"
   default     = ""
 }
 
 variable "AWS_ACCOUNT_ID_PROD" {
-  description = "AWS Account ID (PROD)"
+  description = "AWS Account ID (prod)"
+  default     = ""
+}
+
+variable "AWS_ACCOUNT_ID_PROD_ROLE" {
+  description = "Role to assume for prod account - if set"
   default     = ""
 }
 
