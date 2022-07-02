@@ -2,12 +2,18 @@
 AWSTemplateFormatVersion: "2010-09-09"
 
 Resources:
-  # Terraform state bucket
+  # Terraform State Bucket
   TerraformBucket:
     Type: "AWS::S3::Bucket"
     Properties:
       BucketName:
         Fn::Sub: "${AWS::StackName}-terraform"
+      # This bucket should not be public, ever
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
       LoggingConfiguration:
         DestinationBucketName:
           Ref: TerraformLogBucket
@@ -60,6 +66,12 @@ Resources:
     Properties:
       BucketName:
         Fn::Sub: "${AWS::StackName}-terraform-logs"
+      # This bucket should not be public, ever
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
       AccessControl: "LogDeliveryWrite"
       LifecycleConfiguration:
         Rules:
@@ -69,21 +81,21 @@ Resources:
 
   # S3 Access Log Bucket Policy
   TerraformLogBucketPolicy:
-      Type: "AWS::S3::BucketPolicy"
-      Properties:
-        Bucket:
-          Ref: TerraformLogBucket
-        PolicyDocument:
-          Statement:
-            # Only MFA-ed users can delete
-            - Action: "s3:Delete*"
-              Effect: "Deny"
-              Principal: "*"
-              Resource:
-                Fn::Sub: "arn:aws:s3:::${TerraformLogBucket}/*"
-              Condition:
-                BoolIfExists:
-                  aws:MultiFactorAuthPresent: false
+    Type: "AWS::S3::BucketPolicy"
+    Properties:
+      Bucket:
+        Ref: TerraformLogBucket
+      PolicyDocument:
+        Statement:
+          # Only MFA-ed users can delete
+          - Action: "s3:Delete*"
+            Effect: "Deny"
+            Principal: "*"
+            Resource:
+              Fn::Sub: "arn:aws:s3:::${TerraformLogBucket}/*"
+            Condition:
+              BoolIfExists:
+                aws:MultiFactorAuthPresent: false
 
   # CloudTrail Logs Bucket
   TerraformCloudTrailBucket:
@@ -92,6 +104,12 @@ Resources:
     Properties:
       BucketName:
         Fn::Sub: "${AWS::StackName}-terraform-cloudtrail"
+      # This bucket should not be public, ever
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
       LifecycleConfiguration:
         Rules:
           - Id: "ExpirationRule"
