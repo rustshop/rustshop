@@ -48,6 +48,7 @@ name = "aws-bootstrap"
 version = "0.1.1"
 dependencies = [
  "clap",
+ "clap_complete",
  "color-eyre",
  "eyre",
  "serde",
@@ -105,6 +106,15 @@ dependencies = [
  "strsim",
  "termcolor",
  "textwrap",
+]
+
+[[package]]
+name = "clap_complete"
+version = "3.2.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ead064480dfc4880a10764488415a97fdd36a4cf1bb022d372f02e8faf8386e1"
+dependencies = [
+ "clap",
 ]
 
 [[package]]

@@ -16,6 +16,7 @@ rust-version = "1.58" # cost of latest cargo
 
 [dependencies]
 clap = { version = "3.1.6", features = [ "derive", "env" ] }
+clap_complete = "3.2.3"
 color-eyre = { version = "0.6.1" }
 eyre = "0.6.8"
 serde = { version = "1.0.137", features = ["derive"] }

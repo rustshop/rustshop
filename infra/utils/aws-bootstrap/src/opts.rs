@@ -1,4 +1,30 @@
-use clap::Parser;
+use std::io;
+
+use clap::{Command, CommandFactory, Parser};
+
+#[derive(Parser, Debug, Clone)]
+#[clap(ignore_errors = true)]
+pub struct Completions {
+    /// Print out completions script for a given shell
+    #[clap(long = "completions")]
+    pub completions: Option<clap_complete::Shell>,
+}
+
+impl Completions {
+    pub fn handle_complections_and_maybe_exit() {
+        let opts = Completions::parse();
+
+        if let Some(shell) = opts.completions {
+            clap_complete::generate(
+                shell,
+                &mut Opts::command(),
+                "aws-bootstrap",
+                &mut io::stdout(),
+            );
+            std::process::exit(0);
+        }
+    }
+}
 
 #[derive(Parser, Debug, Clone)]
 #[clap(
@@ -62,8 +88,17 @@ pub struct Opts {
     /// See `email` for more info
     #[clap(long = "email-label-suffix", default_value = "")]
     pub email_label_suffix: String,
+
+    #[clap(flatten)]
+    pub completions: Completions,
 }
 
-pub fn parse() -> Opts {
-    Opts::parse()
+impl Opts {
+    pub fn from_args() -> Opts {
+        Opts::parse()
+    }
+
+    pub fn command<'help>() -> Command<'help> {
+        <Self as CommandFactory>::command()
+    }
 }

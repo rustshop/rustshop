@@ -17,6 +17,9 @@ if [ ! -e ".shrc" ]; then
   cp .shrc.template .shrc
 fi
 
+# Completions
+eval "`aws-bootstrap --completions \`basename $SHELL\``"
+
 # import (and export) all envs from `.env`
 set -a
 . ./.env
@@ -40,5 +43,6 @@ if [ -z "$AWS_REGION" ]; then
   export AWS_REGION="us-east-1"
   echo "Setting AWS_REGION=${AWS_REGION}" 1>&2
 fi
+
 # execute local customization script
 . ./.shrc

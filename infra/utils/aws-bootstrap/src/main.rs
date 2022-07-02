@@ -55,7 +55,9 @@ fn main() -> Result<()> {
         .init();
 
     color_eyre::install()?;
-    let opts = opts::parse();
+    opts::Completions::handle_complections_and_maybe_exit();
+
+    let opts = Opts::from_args();
 
     tracing::debug!("Opts: {opts:?}");
 
