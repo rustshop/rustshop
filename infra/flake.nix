@@ -24,20 +24,20 @@
             let
               utils = (import ./_rustshop/default-system.nix) system;
               aws-bootstrap = utils.packages."${system}".aws-bootstrap;
-              rustshop-terraform = utils.packages."${system}".rustshop-terraform;
-              rustshop-aws = utils.packages."${system}".rustshop-aws;
+              rustshop-bin-wrapper = utils.packages."${system}".rustshop-bin-wrapper;
             in
             [
               # pkgs.kops
               # pkgs.kubectl
 
-              # wrap terraform to auto inject account envs
-              (pkgs.writeShellScriptBin "terraform" "exec -a \"$0\" ${rustshop-terraform}/bin/rustshop-terraform ${pkgs.terraform}/bin/terraform \"$@\"")
-              # wrap aws to auto inject account envs
-              (pkgs.writeShellScriptBin "aws" "exec -a \"$0\" ${rustshop-aws}/bin/rustshop-aws ${pkgs.awscli2}/bin/aws \"$@\"")
-              # aws-bootstrap is supposed to work without account env injections, but uses `aws` underneath so disable account env injection
+              # wrap to auto inject account envs: terraform
+              (pkgs.writeShellScriptBin "terraform" "exec -a \"$0\" ${rustshop-bin-wrapper}/bin/rustshop-bin-wrapper ${pkgs.terraform}/bin/terraform \"$@\"")
+              # wrap to auto inject account envs: aws
+              (pkgs.writeShellScriptBin "aws" "exec -a \"$0\" ${rustshop-bin-wrapper}/bin/rustshop-bin-wrapper ${pkgs.awscli2}/bin/aws \"$@\"")
+              # aws-bootstrap is supposed to work without account envs injection, but uses `aws` underneath so disable account env injection
+              # with an env flag
               # Note: `exec -a ... env ...` doesn't work. `env` doesn't like it, because it uses it when call via hashbang.
-              (pkgs.writeShellScriptBin "aws-bootstrap" "exec env RUSTSHOP_NO_WRAP=true ${aws-bootstrap}/bin/aws-bootstrap \"$@\"")
+              (pkgs.writeShellScriptBin "aws-bootstrap" "exec env RUSTSHOP_NO_BIN_WRAP=true ${aws-bootstrap}/bin/aws-bootstrap \"$@\"")
             ];
 
           shellHook = ''

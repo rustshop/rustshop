@@ -1,5 +1,5 @@
 {
-  description = "Custom terraform wrapper for rustshop";
+  description = "Bin wrapper for rustshop envs";
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs";
@@ -48,16 +48,16 @@
       };
 
       cargoArtifacts = craneLib.buildDepsOnly (commonArgs // {
-        pname = "terraform-wrapper-deps";
+        pname = "rustshop-bin-wrapper-deps";
       });
 
-      terraform-wrapper = craneLib.buildPackage (commonArgs // {
-        pname = "terraform-wrapper";
+      rustshop-bin-wrapper = craneLib.buildPackage (commonArgs // {
+        pname = "rustshop-bin-wrapper";
       });
 
     in {
-      terraform-wrapper = terraform-wrapper;
-      defaultPackage = terraform-wrapper;
+      rustshop-bin-wrapper = rustshop-bin-wrapper;
+      defaultPackage = rustshop-bin-wrapper;
 
       devShell = pkgs.mkShell {
         buildInputs = cargoArtifacts.buildInputs;

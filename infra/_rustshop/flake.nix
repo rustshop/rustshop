@@ -47,7 +47,7 @@
         ];
       };
 
-      aws-bootstrap-deps = craneLib.buildDepsOnly (commonArgs // {
+      deps = craneLib.buildDepsOnly (commonArgs // {
         pname = "deps";
       });
 
@@ -55,25 +55,19 @@
         pname = "aws-bootstrap";
       });
 
-      rustshop-aws = craneLib.buildPackage (commonArgs // {
-        pname = "rustshop-aws";
-      });
-
-
-      rustshop-terraform = craneLib.buildPackage (commonArgs // {
-        pname = "rustshop-terraform";
+      rustshop-bin-wrapper = craneLib.buildPackage (commonArgs // {
+        pname = "rustshop-bin-wrapper";
       });
 
     in {
       packages = {
         aws-bootstrap = aws-bootstrap;
-        rustshop-aws = rustshop-aws;
-        rustshop-terraform = rustshop-terraform;
+        rustshop-bin-wrapper = rustshop-bin-wrapper;
       };
 
       devShell = pkgs.mkShell {
-        buildInputs = aws-bootstrap-deps.buildInputs;
-        nativeBuildInputs = aws-bootstrap-deps.nativeBuildInputs ++ [
+        buildInputs = deps.buildInputs;
+        nativeBuildInputs = deps.nativeBuildInputs ++ [
           fenix-pkgs.rust-analyzer
           fenix-channel.rustfmt
           fenix-channel.rustc

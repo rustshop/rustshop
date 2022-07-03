@@ -86,7 +86,7 @@ pub struct Env {
 }
 
 impl Env {
-    pub const NO_WRAP: &'static str = "RUSTSHOP_BIN_NO_WRAP";
+    pub const NO_WRAP: &'static str = "RUSTSHOP_NO_BIN_WRAP";
 
     pub fn new_detect_no_profile_validation() -> Result<Self> {
         let shop_name = load_env_var("RUSTSHOP_NAME")?;

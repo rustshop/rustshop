@@ -2,7 +2,6 @@
 members = [
 	"pkgs/aws-bootstrap",
 	"pkgs/env",
-	"pkgs/rustshop-aws",
-	"pkgs/rustshop-terraform",
+	"pkgs/rustshop-bin-wrapper",
 ]
 
