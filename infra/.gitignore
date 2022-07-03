@@ -1,2 +1,4 @@
 /.env
 /.shrc
+/*/.terraform/
+/*/.terraform.lock.hcl

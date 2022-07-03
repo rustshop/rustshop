@@ -1,0 +1,98 @@
+# CloudFormation Bootstrap (common for all accounts)
+AWSTemplateFormatVersion: "2010-09-09"
+
+Resources:
+
+  TerraformState:
+    Type: "AWS::S3::Bucket"
+    Properties:
+      BucketName:
+        Fn::Sub: "${AWS::StackName}-state"
+      # This bucket should not be public, ever
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      LoggingConfiguration:
+        DestinationBucketName:
+          Ref: TerraformStateLogs
+      VersioningConfiguration:
+        Status: "Enabled"
+      LifecycleConfiguration:
+        Rules:
+          - Id: "ExpirationRule"
+            Status: "Enabled"
+            NoncurrentVersionExpirationInDays: 90
+
+  # Terraform State Bucket Policy
+  TerraformStatePolicy:
+    Type: "AWS::S3::BucketPolicy"
+    Properties:
+      Bucket:
+        Ref: TerraformState
+      PolicyDocument:
+        Statement:
+          # Only MFA-ed users can delete
+          - Action: "s3:Delete*"
+            Effect: "Deny"
+            Principal: "*"
+            Resource:
+              Fn::Sub: "arn:aws:s3:::${TerraformState}/*"
+            Condition:
+              BoolIfExists:
+                aws:MultiFactorAuthPresent: false
+
+  # Terraform Locking - Cheap DynamoDB Table
+  TerraformDynamoDBTable:
+    Type: "AWS::DynamoDB::Table"
+    Properties:
+      TableName:
+        Fn::Sub: "${AWS::StackName}"
+      AttributeDefinitions:
+        - AttributeName: "LockID"
+          AttributeType: "S"
+      KeySchema:
+        - AttributeName: "LockID"
+          KeyType: "HASH"
+      # Underprovision - this makes it cheap
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+
+  # Terraform Log S3 Bucket
+  TerraformStateLogs:
+    Type: "AWS::S3::Bucket"
+    Properties:
+      BucketName:
+        Fn::Sub: "${AWS::StackName}-state-logs"
+      # This bucket should not be public, ever
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      AccessControl: "LogDeliveryWrite"
+      LifecycleConfiguration:
+        Rules:
+          - Id: "ExpirationRule"
+            Status: "Enabled"
+            ExpirationInDays: 90
+
+  # Terraform Log S3 Bucket Policy
+  TerraformStateLogsPolicy:
+    Type: "AWS::S3::BucketPolicy"
+    Properties:
+      Bucket:
+        Ref: TerraformStateLogs
+      PolicyDocument:
+        Statement:
+          # Only MFA-ed users can delete
+          - Action: "s3:Delete*"
+            Effect: "Deny"
+            Principal: "*"
+            Resource:
+              Fn::Sub: "arn:aws:s3:::${TerraformStateLogs}/*"
+            Condition:
+              BoolIfExists:
+                aws:MultiFactorAuthPresent: false

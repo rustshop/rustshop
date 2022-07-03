@@ -22,20 +22,28 @@
         devShells.default = pkgs.mkShell {
           buildInputs =
             let
-              aws-bootstrap-pkgs = (import ./utils/aws-bootstrap/default-system.nix) system;
-              utils = (import ./utils/default-system.nix) system;
+              utils = (import ./_rustshop/default-system.nix) system;
+              rustshop-terraform = utils.packages."${system}".rustshop-terraform;
+              rustshop-aws = utils.packages."${system}".rustshop-aws;
             in
             [
-              pkgs.terraform
-              pkgs.awscli2
-              pkgs.kops
-              pkgs.kubectl
-              utils.packages."${system}".terraform-wrapper
-              utils.packages."${system}".terraform-wrapper
+              # pkgs.kops
+              # pkgs.kubectl
+              utils.packages."${system}".aws-bootstrap
+              # wrap these binaries:
+              (pkgs.writeShellScriptBin "terraform" "exec -a \"$0\" ${rustshop-terraform}/bin/rustshop-terraform ${pkgs.terraform}/bin/terraform \"$@\"")
+              (pkgs.writeShellScriptBin "aws" "exec -a \"$0\" ${rustshop-aws}/bin/rustshop-aws ${pkgs.awscli2}/bin/aws \"$@\"")
             ];
 
           shellHook = ''
-            . ${./utils/shell-hook.sh}
+            export RUSTSHOP_ROOT="`pwd`"
+            if [ ! -e ".env" ]; then
+              echo 'Creating .env' 1>&2
+              cp ${./_rustshop/templates/env.template} ".env"
+              chmod 0600 .env
+            fi
+
+            . ${./_rustshop/shell-hook.sh}
           '';
         };
       });

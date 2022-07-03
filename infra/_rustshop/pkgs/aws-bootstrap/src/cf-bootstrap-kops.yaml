@@ -1,0 +1,85 @@
+# CloudFormation Bootstrap (non-root parts)
+AWSTemplateFormatVersion: "2010-09-09"
+
+Resources:
+
+# Kops
+
+  # Kops State S3 Bucket
+  KopsState:
+    Type: "AWS::S3::Bucket"
+    Properties:
+      BucketName:
+        Fn::Sub: "${AWS::StackName}-state"
+      # This bucket should not be public, ever
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      LoggingConfiguration:
+        DestinationBucketName:
+          Ref: KopsStateLogs
+      VersioningConfiguration:
+        Status: "Enabled"
+      LifecycleConfiguration:
+        Rules:
+          - Id: "ExpirationRule"
+            Status: "Enabled"
+            NoncurrentVersionExpirationInDays: 90
+
+  # Kops State S3 Bucket Policy
+  KopsStatePolicy:
+    Type: "AWS::S3::BucketPolicy"
+    Properties:
+      Bucket:
+        Ref: KopsState
+      PolicyDocument:
+        Statement:
+          # Only MFA-ed users can delete
+          - Action: "s3:Delete*"
+            Effect: "Deny"
+            Principal: "*"
+            Resource:
+              Fn::Sub: "arn:aws:s3:::${KopsState}/*"
+            Condition:
+              BoolIfExists:
+                aws:MultiFactorAuthPresent: false
+
+  # Kops Log S3 Bucket
+  KopsStateLogs:
+    Type: "AWS::S3::Bucket"
+    Properties:
+      BucketName:
+        Fn::Sub: "${AWS::StackName}-state-logs"
+      # This bucket should not be public, ever
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      AccessControl: "LogDeliveryWrite"
+      LifecycleConfiguration:
+        Rules:
+          - Id: "ExpirationRule"
+            Status: "Enabled"
+            ExpirationInDays: 90
+
+  # Kops Log S3 Bucket Policy
+  KopsStateLogsPolicy:
+    Type: "AWS::S3::BucketPolicy"
+    Properties:
+      Bucket:
+        Ref: KopsStateLogs
+      PolicyDocument:
+        Statement:
+          # Only MFA-ed users can delete
+          - Action: "s3:Delete*"
+            Effect: "Deny"
+            Principal: "*"
+            Resource:
+              Fn::Sub: "arn:aws:s3:::${KopsStateLogs}/*"
+            Condition:
+              BoolIfExists:
+                aws:MultiFactorAuthPresent: false
+
