@@ -23,16 +23,21 @@
           buildInputs =
             let
               utils = (import ./_rustshop/default-system.nix) system;
+              aws-bootstrap = utils.packages."${system}".aws-bootstrap;
               rustshop-terraform = utils.packages."${system}".rustshop-terraform;
               rustshop-aws = utils.packages."${system}".rustshop-aws;
             in
             [
               # pkgs.kops
               # pkgs.kubectl
-              utils.packages."${system}".aws-bootstrap
-              # wrap these binaries:
+
+              # wrap terraform to auto inject account envs
               (pkgs.writeShellScriptBin "terraform" "exec -a \"$0\" ${rustshop-terraform}/bin/rustshop-terraform ${pkgs.terraform}/bin/terraform \"$@\"")
+              # wrap aws to auto inject account envs
               (pkgs.writeShellScriptBin "aws" "exec -a \"$0\" ${rustshop-aws}/bin/rustshop-aws ${pkgs.awscli2}/bin/aws \"$@\"")
+              # aws-bootstrap is supposed to work without account env injections, but uses `aws` underneath so disable account env injection
+              # Note: `exec -a ... env ...` doesn't work. `env` doesn't like it, because it uses it when call via hashbang.
+              (pkgs.writeShellScriptBin "aws-bootstrap" "exec env RUSTSHOP_NO_WRAP=true ${aws-bootstrap}/bin/aws-bootstrap \"$@\"")
             ];
 
           shellHook = ''

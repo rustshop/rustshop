@@ -3,7 +3,7 @@ use std::io;
 use clap::{Command, CommandFactory, Parser};
 
 #[derive(Parser, Debug, Clone)]
-#[clap(ignore_errors = true)]
+#[clap(ignore_errors = true, disable_help_flag = true)]
 pub struct Completions {
     /// Print out completions script for a given shell
     #[clap(long = "completions")]
@@ -90,9 +90,6 @@ pub struct Opts {
     /// See `email` for more info
     #[clap(long = "email-label-suffix", default_value = "")]
     pub email_label_suffix: String,
-
-    #[clap(flatten)]
-    pub completions: Completions,
 }
 
 impl Opts {
