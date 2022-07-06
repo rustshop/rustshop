@@ -1,6 +1,5 @@
 [workspace]
 members = [
-	"aws-bootstrap",
 	"env",
 	"bin",
 ]

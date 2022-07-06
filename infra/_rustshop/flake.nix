@@ -49,25 +49,15 @@
 
       cargoArtifacts = craneLib.buildDepsOnly (commonArgs // {
         pname = "deps";
-      });
-
-      aws-bootstrap = craneLib.buildPackage (commonArgs // {
-        inherit cargoArtifacts;
-        pname = "aws-bootstrap";
+        doCheck = false;
       });
 
       rustshop = craneLib.buildPackage (commonArgs // {
         inherit cargoArtifacts;
-        pname = "rustshop";
       });
 
     in {
       packages = {
-        # aws-bootstrap is supposed to work without account envs injection, but uses `aws` underneath so disable account env injection
-        # with an env flag
-        # Note: `exec -a ... env ...` doesn't work. `env` doesn't like it, because it uses it when call via hashbang.
-        aws-bootstrap = (pkgs.writeShellScriptBin "aws-bootstrap" "exec env RUSTSHOP_NO_BIN_WRAP=true ${aws-bootstrap}/bin/aws-bootstrap \"$@\"");
-
         rustshop = rustshop;
 
         # alias `rustshop` to just `shop`
