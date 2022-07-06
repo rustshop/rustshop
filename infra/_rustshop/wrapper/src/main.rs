@@ -55,29 +55,14 @@ fn main() -> Result<()> {
         return Err(cmd.exec())?;
     }
 
-    // If it's `aws configure`, we don't want to mess with it, and it doesn't
-    // really
-    // This helpwith setting different
-    // profiles
-    if is_aws_command_non_wrappable(&cmd_base) {
-        debug!("Not modifing the environment - whitelisted `aws ...` invocation");
-        return Err(cmd.exec())?;
-    }
+    let env = if should_skip_validation(&cmd_base) {
+        debug!("Skip aws profile validation");
+        rustshop_env::Env::new_detect_no_profile_validation()?
+    } else {
+        rustshop_env::Env::new_detect()?
+    };
 
-    let use_init_workaround = std::env::args_os()
-        .skip(2)
-        .filter(|arg| {
-            !arg.to_str()
-                .map(|arg| arg.starts_with('-'))
-                .unwrap_or(false)
-        })
-        .next()
-        .and_then(|arg| arg.to_str().map(ToString::to_string))
-        == Some("init".to_string());
-
-    let env = rustshop_env::Env::new_detect()?;
-
-    if use_init_workaround {
+    if is_terraform_init() {
         info!("Executing with `terraform init` workaround");
 
         cmd = cmd.args(&[
@@ -108,13 +93,21 @@ fn main() -> Result<()> {
         cmd = env.set_tf_aws_envs_on(cmd)?;
     }
 
+    if cmd_base.to_str() == Some("kops") {
+        trace!("Setting `kops` envs");
+        cmd = env.set_kops_envs_on(cmd)?;
+    }
     trace!(cmd = format!("{cmd:?}"), "exec");
     Err(cmd.exec())?;
 
     Ok(())
 }
 
-fn is_aws_command_non_wrappable(cmd_base: &OsStr) -> bool {
+fn should_skip_validation(cmd_base: &OsStr) -> bool {
+    // If it's `aws configure`, we don't want to mess with it, and it doesn't
+    // really
+    // This helpwith setting different
+    // profiles
     if cmd_base.to_str() != Some("aws") {
         return false;
     }
@@ -130,4 +123,17 @@ fn is_aws_command_non_wrappable(cmd_base: &OsStr) -> bool {
         [cmd, ..] => cmd == &OsString::from("configure"),
         [] => true,
     }
+}
+
+fn is_terraform_init() -> bool {
+    std::env::args_os()
+        .skip(2)
+        .filter(|arg| {
+            !arg.to_str()
+                .map(|arg| arg.starts_with('-'))
+                .unwrap_or(false)
+        })
+        .next()
+        .and_then(|arg| arg.to_str().map(ToString::to_string))
+        == Some("init".to_string())
 }

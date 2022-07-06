@@ -1,0 +1,74 @@
+# CloudFormation Bootstrap (common for all accounts)
+AWSTemplateFormatVersion: "2010-09-09"
+
+Resources:
+  # CloudTrail Logs Bucket
+  CloudTrailLogs:
+    Type: "AWS::S3::Bucket"
+    DeletionPolicy: Retain
+    Properties:
+      BucketName:
+        Fn::Sub: "${AWS::StackName}-logs"
+      # This bucket should not be public, ever
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      LifecycleConfiguration:
+        Rules:
+          - Id: "ExpirationRule"
+            Status: "Enabled"
+            ExpirationInDays: 730
+
+  # CloudTrail Logs Bucket Policy
+  CloudTrailLogsPolicy:
+    Type: "AWS::S3::BucketPolicy"
+    Properties:
+      Bucket:
+        Ref: CloudTrailLogs
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service: "cloudtrail.amazonaws.com"
+            Action: "s3:GetBucketAcl"
+            Resource:
+              Fn::Sub: "arn:aws:s3:::${CloudTrailLogs}"
+          - Effect: "Allow"
+            Principal:
+              Service: "cloudtrail.amazonaws.com"
+            Action: "s3:PutObject"
+            Resource:
+              Fn::Sub: "arn:aws:s3:::${CloudTrailLogs}/AWSLogs/${AWS::AccountId}/*"
+            Condition:
+              StringEquals:
+                s3:x-amz-acl: "bucket-owner-full-control"
+          # Only MFA-ed users can delete
+          - Effect: "Deny"
+            Principal: "*"
+            Action: "s3:Delete*"
+            Resource:
+              Fn::Sub: "arn:aws:s3:::${CloudTrailLogs}/*"
+            Condition:
+              BoolIfExists:
+                aws:MultiFactorAuthPresent: false
+
+  # CloudTrail Trail
+  CloudTrail:
+    Type: "AWS::CloudTrail::Trail"
+    DependsOn:
+      - CloudTrailLogs
+      - CloudTrailLogsPolicy
+    Properties:
+      IncludeGlobalServiceEvents: true
+      S3BucketName:
+        Ref: CloudTrailLogs
+      IsLogging: true
+      IsMultiRegionTrail: true
+      EnableLogFileValidation: true
+      Tags:
+        - Key: Name
+          Value:
+            Fn::Sub: "${AWS::StackName}"

@@ -1,7 +1,7 @@
 [workspace]
 members = [
-	"pkgs/aws-bootstrap",
-	"pkgs/env",
-	"pkgs/rustshop-bin-wrapper",
+	"aws-bootstrap",
+	"env",
+	"bin",
 ]
 
