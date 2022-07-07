@@ -1,60 +1,96 @@
 ## Bootstraping the shop
 
+This document describes how to bootstrap an AWS account
+using `rustshop` as a base infrastructure for your own "shop",
+using `rustshop`.
+
 There will be some (relatively short) amount of manual work,
 and then the automation will take over.
 
-### Register domain
 
-If you want to use AWS to host the DNS, you might want to create an
-account first (see below). This isn't necessary - you can start
-with the domain registered elsewhere, which will allow you to use
-existing email in this domain as your root account root email.
+### Pick a `<shopname>`
+
+Bootstrap scripts will derive bunch of names from it.
+It should have a solid chance to be unique, otherwise you risk
+into running into name conflicts for globally unique resource
+names (like S3 Buckets).
+
+In our case `<shopname>` is `rustshop`.
+
+### Get a DNS domain (`<domain>`)
+
+A shop like this will most probably require a DNS domain. Technically
+a domain is not strictly necessary until setting up a k8s
+cluster, but `rustshop` requires a base domain name configuration early
+in the process.
+
+You can use AWS to host your domain, or you can use an external
+DNS hosting provider.
+
+If you want to use AWS to host the DNS, you might want to create the
+root account first (see below), and head to Route 53 to purchase it.
 
 In our case the `<domain>` is rustshop.org.
 
 ### Setup email
 
-You need to be able to receive emails at `infra+<labels>@<domain>`.
-Figure it out - it's beyond of the scope of this document.
-(TODO: Point to some choices and instructions)
+When generating accounts rustshop will need a root user email
+address.
 
-In our case the emails are `infra+<labels>@rustshop.org`.
+By default it will use a `<email-user>+<account-name>@<email-host>` email
+address generation system, so you can use one email address,
+with different labels. Look up "gmail plus addressing" if you're
+not familiar with this scheme. Other email providers often
+support it as well.
+
+Emails do not have to be in the `<domain>`, but can be.
+
+Figure it out - it's beyond of the scope of this document.
+
+In our case the base email will be `infra@rustshop.org`.
 
 ### Create your root account
 
-Pick a `<shopname>`. This will be used in a cuple of places.
-It should have a solid chance to be unique, otherwise you risk
-into running into name conflicts for globally unique resource
-names (like S3 Buckets).
+Create (if you haven't already) the root account for your
+organization (which will have other sub-accounts).
 
-In our case the `<shopname>` is `rustshop`.
+Name the AWS account `<shopname>-root`. Consider using`<email-user>+root@<email-domain>`
+as the account email to be consistent.
 
-Name the AWS account `<shopname>-root` and use `infra+root@<domain>`
-as the contact email. Set a strong password.
+**Set a strong password.**
 
 You might want to watch https://learn.cantrill.io/courses/730712/lectures/24950112
 for some relevant instruction.
 
-Add MFA for this account. Seriously - always set MFA on all your accounts.
+**Add MFA for this account.** Seriously - always set MFA on all your accounts.
 You do not want to pay a lot of money because your password leaked and now
 your account is mining some crypto.
 
-Create an initial "Cost Budget", and add an alert in it. If anything goes
+Create an initial "Cost Budget" and add an alert in it. If anything goes
 wrong you want to know that you're paying more than expected.
 
 Create `iamadmin` IAM admin user with `AdministratorAccess` policy. Make sure
-to allow it "Access key - Programmatic access" -
+to allow it the "Access key - Programmatic access" option -
 we are going to need it soon. You might want to watch
 https://learn.cantrill.io/courses/730712/lectures/24950119 for instructions.
 
 If you selected "Access key - Programmatic access" option, you should be presented
 with access keys details. Keep it around safe locally. It will be need soon.
 
-Though it isn't strictly necessary, but if you are like me and AWS is a bit new
-to you  consider enrolling into
+Though it isn't strictly necessary, if you are like me and AWS is a bit new
+to you consider enrolling into
 [Adrian Cantrill's AWS Certified Solutions Architect - Associate course](https://learn.cantrill.io/p/aws-certified-solutions-architect-associate-saa-c02).
 The helpful videos linked above are the freely accessible parts of the
 much larger course, and I can highly recommend it.
+
+
+### Create your shop's monorepo git repository
+
+You can start with `git init .`, or create it on remotely
+and clone locally.
+
+Copy the [flake.nix](rustshop/templates/flake.nix) to the
+root dir. `git add flake.nix`
 
 ### Bootstrap your infra
 

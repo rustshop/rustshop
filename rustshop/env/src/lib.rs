@@ -11,6 +11,8 @@ pub use cfg::*;
 
 mod ioutil;
 
+pub struct Suggestion(&'static str);
+
 #[derive(Debug, Display)]
 pub enum EnvError {
     #[display(fmt = "Could not load rustshop environment")]
@@ -160,7 +162,7 @@ impl EnvRoot {
         Ok(self.load_shop_yaml_opt()?.map(|shop_yaml| shop_yaml.shop))
     }
 
-    fn load_user_yaml_opt(&self) -> EnvResult<Option<UserYaml>> {
+    pub fn load_user_yaml_opt(&self) -> EnvResult<Option<UserYaml>> {
         let path = self.user_yaml_path();
         if !path.exists() {
             return Ok(None);
@@ -170,7 +172,7 @@ impl EnvRoot {
         ))
     }
 
-    fn load_user_yaml(&self) -> EnvResult<UserYaml> {
+    pub fn load_user_yaml(&self) -> EnvResult<UserYaml> {
         Ok(if let Some(user_yaml) = self.load_user_yaml_opt()? {
             user_yaml
         } else {
@@ -243,7 +245,9 @@ impl Env {
 
         Ok(Self {
             shop: root.load_shop_yaml()?,
-            user: root.load_user_yaml()?,
+            // if the user config isn't there, just start with an empty one
+            // instead of erroring out
+            user: root.load_user_yaml_opt()?.unwrap_or_default(),
             context_path: root
                 .load_context_yaml_opt()?
                 .unwrap_or_else(|| ContextYaml::default()),
@@ -338,9 +342,11 @@ impl Env {
                         name: name.to_owned()
                     })
                 }
-                (Some(_), None) => bail!(EnvError::AccountNotConfigured {
-                    name: name.to_owned()
-                }),
+                (Some(_), None) => Err(EnvError::AccountNotConfigured {
+                    name: name.to_owned(),
+                })
+                .report()
+                .attach(Suggestion("Use `rustshop configure account`"))?,
             },
         )
     }

@@ -30,7 +30,7 @@
         inherit system;
       };
       fenix-pkgs = fenix.packages.${system};
-      fenix-channel = fenix-pkgs.stable;
+      fenix-channel = fenix-pkgs.complete;
 
       craneLib = (crane.mkLib pkgs).overrideScope' (final: prev: {
         cargo = fenix-channel.cargo;
@@ -57,8 +57,8 @@
         pname = "rustshop";
 
         postInstall = ''
-          mkdir -p "$out/usr/share"
-          cp ./shell-hook.sh $out/usr/share
+          mkdir -p "$out/usr/share/rustshop"
+          cp ./shell-hook.sh $out/usr/share/rustshop
         '';
       });
 

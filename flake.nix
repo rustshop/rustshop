@@ -31,7 +31,7 @@
             ];
 
           shellHook = ''
-            . ${rustshop.default}/usr/share/shell-hook.sh
+            . ${rustshop.default}/usr/share/rustshop/shell-hook.sh
           '';
         };
       });

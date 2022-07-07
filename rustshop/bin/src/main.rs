@@ -22,6 +22,18 @@ impl Context for AppError {}
 pub type AppResult<T> = Result<T, AppError>;
 
 fn main() -> AppResult<()> {
+    let res = main_inner();
+    #[cfg(nightly)]
+    if let Err(ref report) = res {
+        for suggestion in report.request_ref::<env::Suggestion>() {
+            eprintln!("Suggestion: {}", suggestion.0);
+        }
+    }
+
+    res
+}
+
+fn main_inner() -> AppResult<()> {
     tracing_subscriber::registry()
         .with(tracing_subscriber::EnvFilter::new(
             std::env::var("RUST_LOG").unwrap_or_else(|_| "rustshop_env=info,rustshop=info".into()),

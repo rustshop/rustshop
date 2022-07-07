@@ -1,0 +1,16 @@
+---
+name: rustshop
+domain: rustshop.org
+accounts:
+  prod:
+    bootstrap_name: rustshop-prod
+    bootstrap_aws_region: us-east-1
+    clusters:
+      prod:
+        domain: prod.k8s.rustshop.org
+  root:
+    bootstrap_name: rustshop-root
+    bootstrap_aws_region: us-east-1
+    clusters:
+      root:
+        domain: root.k8s.rustshop.org
