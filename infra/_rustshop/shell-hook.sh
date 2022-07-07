@@ -27,6 +27,4 @@ fi
 alias k=kubectl
 
 # Completions
-eval "`aws-bootstrap --completions \`basename $SHELL\``"
-# Completions
 eval "`rustshop --completions \`basename $SHELL\``"

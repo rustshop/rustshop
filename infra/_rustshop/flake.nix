@@ -48,12 +48,18 @@
       };
 
       cargoArtifacts = craneLib.buildDepsOnly (commonArgs // {
-        pname = "deps";
+        pname = "rustshop-deps";
         doCheck = false;
       });
 
       rustshop = craneLib.buildPackage (commonArgs // {
         inherit cargoArtifacts;
+        pname = "rustshop";
+
+        postInstall = ''
+          mkdir -p "$out/usr/share"
+          cp ./shell-hook.sh $out/usr/share
+        '';
       });
 
     in {

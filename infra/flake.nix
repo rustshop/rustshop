@@ -20,17 +20,16 @@
         lib = nixpkgs.lib;
       in
       {
-        devShells.default = pkgs.mkShell {
+        devShells.default =  let
+          rustshop = (import ./_rustshop/default-system.nix) system;
+        in pkgs.mkShell {
           buildInputs =
-            let
-              rustshop = (import ./_rustshop/default-system.nix) system;
-            in
             lib.attrsets.attrValues rustshop.packages."${system}" ++ [
               # extra binaries here
             ];
 
           shellHook = ''
-            . ${./_rustshop/shell-hook.sh}
+            . ${rustshop.default}/usr/share/shell-hook.sh
           '';
         };
       });
