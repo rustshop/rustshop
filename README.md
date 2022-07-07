@@ -32,7 +32,7 @@ business value using Rust in your free time for no pay or benefits!
 
 ## Links
 
-* [Infra Bootstrapping](infra/README.bootstrapping.md) - how to set up
+* [Infra Bootstrapping](README.bootstrapping.md) - how to set up
   initial infrastructure.
 * [Onboarding](./README.onboarding.md) - setting up development for new employees.
 * [Tech Stack](./README.techstack.md) - general information about technologies used.

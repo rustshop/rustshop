@@ -1,5 +1,5 @@
 {
-  description = "Main repository";
+  description = "Infra";
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs";
@@ -9,23 +9,30 @@
       url = "github:edolstra/flake-compat";
       flake = false;
     };
-
-    infra = {
-      url = "./infra/";
-    };
-
   };
 
-  outputs = { self, nixpkgs, flake-utils, flake-compat, infra}:
+  outputs = { self, nixpkgs, flake-utils, flake-compat }:
     flake-utils.lib.eachDefaultSystem (system:
-    let
-      pkgs = import nixpkgs {
-        inherit system;
-      };
-    in {
+      let
+        pkgs = import nixpkgs {
+          inherit system;
+        };
+        lib = nixpkgs.lib;
+      in
+      {
+        devShells.default =  let
+          # external project would import `rustshop` as a flake,
+          # but we cheat, at least for now
+          rustshop = (import ./rustshop/default-system.nix) system;
+        in pkgs.mkShell {
+          buildInputs =
+            lib.attrsets.attrValues rustshop.packages."${system}" ++ [
+              # extra binaries here
+            ];
 
-      devShell = pkgs.mkShell {
-        buildInputs = [ pkgs.pulumi-bin ];
-      };
-  });
+          shellHook = ''
+            . ${rustshop.default}/usr/share/shell-hook.sh
+          '';
+        };
+      });
 }

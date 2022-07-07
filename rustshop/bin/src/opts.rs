@@ -27,9 +27,9 @@ impl Completions {
     about = "Rustshop binary",
     after_help = r#"
 Help and feedback: https://github.com/rustshop/rustshop/discussions/categories/help-general
-"#
+"#,
+    infer_subcommands = true
 )]
-
 pub struct Opts {
     #[clap(subcommand)]
     pub command: Commands,
@@ -50,33 +50,29 @@ pub enum Commands {
     /// Manually add rustshop components to track (see `bootstrap` instead)
     ///
     /// If you are setting up a new shop, use `bootstrap` instead.
-    #[clap(subcommand, alias = "a")]
+    #[clap(subcommand)]
     Add(AddCommands),
 
-    #[clap(subcommand, alias = "a")]
+    /// Set up new amazon account/organization
+    #[clap(subcommand)]
     Bootstrap(BootstrapCommands),
 
     /// Configure user settings
-    #[clap(subcommand, alias = "c")]
+    #[clap(subcommand)]
     Configure(ConfigureCommands),
 
     /// Switch current context (account, cluster, namespace)
-    #[clap(subcommand, alias = "s")]
+    #[clap(subcommand)]
     Switch(SwitchCommands),
 
-    #[clap(subcommand, alias = "s")]
+    /// Display certain values
+    #[clap(subcommand)]
     Get(GetCommands),
 
     /// Wrap a bin supplying rustshop specific arguments and envirionment
     #[clap(hide = true, disable_help_flag = true)]
     #[clap(allow_hyphen_values = true)]
-    Wrap {
-        #[clap(allow_hyphen_values = true)]
-        bin: OsString,
-
-        #[clap(allow_hyphen_values = true)]
-        args: Vec<OsString>,
-    },
+    Wrap { bin: OsString, args: Vec<OsString> },
 }
 
 #[derive(Debug, Subcommand, Clone)]
