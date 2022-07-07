@@ -36,7 +36,6 @@ fn main() -> AppResult<()> {
             AddCommands::Shop {
                 name,
                 domain,
-                account_id,
                 aws_region,
             } => {
                 let env = EnvRoot::load().change_context(AppError)?;
@@ -44,19 +43,15 @@ fn main() -> AppResult<()> {
 
                 let mut env = Env::load().change_context(AppError)?;
                 // add a root account right away; notably without cluster
-                env.add_account("root", &account_id, &aws_region)
+                env.add_account("root", &aws_region)
                     .change_context(AppError)?;
                 // add a cluster right away
                 env.add_cluster("root", "root").change_context(AppError)?;
             }
-            AddCommands::Account {
-                name,
-                account_id,
-                aws_region,
-            } => {
+            AddCommands::Account { name, aws_region } => {
                 let mut env = Env::load().change_context(AppError)?;
                 let _account_cfg = env
-                    .add_account(&name, &account_id, &aws_region)
+                    .add_account(&name, &aws_region)
                     .change_context(AppError)?;
                 // add a cluster right away
                 env.add_cluster(&name, &name).change_context(AppError)?;
@@ -192,7 +187,7 @@ fn bootstrap_account(
     .change_context(AppError)?;
 
     if create_account {
-        env.add_account(&name, &account_id, &aws_region)
+        env.add_account(&name, &aws_region)
             .change_context(AppError)?;
         env.add_cluster(&name, &name).change_context(AppError)?;
     }

@@ -19,8 +19,6 @@ impl ShopCfg {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ShopAccountCfg {
-    /// AWS Account ID
-    pub aws_account_id: String,
     /// Full account name used during CloudFormation bootstrap (e.g. `rustshop-prod`)
     pub bootstrap_name: String,
     /// Account suffix name during CloudFormation bootstrap

@@ -397,12 +397,7 @@ impl Env {
             })?)
     }
 
-    pub fn add_account(
-        &mut self,
-        name: &str,
-        aws_account_id: &str,
-        aws_region: &str,
-    ) -> EnvResult<ShopAccountCfg> {
+    pub fn add_account(&mut self, name: &str, aws_region: &str) -> EnvResult<ShopAccountCfg> {
         debug!(name, "Add account");
 
         if let Some(_account_cfg) = self.get_account_mut_opt(name)? {
@@ -412,7 +407,6 @@ impl Env {
         }
 
         let shop_cfg = ShopAccountCfg {
-            aws_account_id: aws_account_id.to_owned(),
             bootstrap_name: format!("{}-{}", self.shop.shop.name, name),
             bootstrap_aws_region: aws_region.to_string(),
             clusters: BTreeMap::new(),

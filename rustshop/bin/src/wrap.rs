@@ -138,9 +138,6 @@ pub fn set_aws_envs_on<'cmd>(
     //     cmd = cmd.env("AWS_REGION", aws_region);
     // }
 
-    debug!(AWS_ACCOUNT_ID = account_cfg.shop.aws_account_id, "Setting");
-    cmd = cmd.env("_AWS_ACCOUNT_ID", &account_cfg.shop.aws_account_id);
-
     cmd
 }
 /// Set the variables like for `aws` CLI, but prefixed with `TF_VAR_` so they
@@ -170,12 +167,6 @@ pub fn set_tf_aws_envs_on<'cmd>(
         "TF_VAR_ACCOUNT_BOOTSTRAP_AWS_REGION",
         &account_cfg.shop.bootstrap_aws_region,
     );
-
-    debug!(
-        TF_VAR_AWS_ACCOUNT_ID = &account_cfg.shop.aws_account_id,
-        "Setting"
-    );
-    cmd.env("TF_VAR_AWS_ACCOUNT_ID", &account_cfg.shop.aws_account_id);
 
     debug!(
         TF_VAR_AWS_PROFILE = &account_cfg.user.aws_profile,

@@ -79,28 +79,19 @@ pub enum Commands {
 pub enum AddCommands {
     Shop {
         /// Shop name. Eg. `rustshop.org`
-        #[clap(long = "name", env = "RUSTSHOP_NAME")]
+        #[clap(env = "RUSTSHOP_NAME")]
         name: String,
 
         /// Base DNS domain to use for this shop. Eg. `rustshop.org`
         #[clap(long = "domain", env = "RUSTSHOP_DOMAIN")]
         domain: String,
 
-        /// AWS Account ID
-        #[clap(long = "account-id", env = "AWS_ACCOUNT_ID")]
-        account_id: String,
-
         /// AWS Region to bootstrap resources to
         #[clap(long = "region", env = "AWS_REGION", default_value = "us-east-1")]
         aws_region: String,
     },
     Account {
-        #[clap(long = "name")]
         name: String,
-
-        /// AWS Account ID
-        #[clap(long = "account-id", env = "AWS_ACCOUNT_ID")]
-        account_id: String,
 
         /// AWS Region to bootstrap resources to
         #[clap(long = "region", env = "AWS_REGION", default_value = "us-east-1")]
@@ -118,7 +109,7 @@ pub enum BootstrapCommands {
         /// Shop name. Eg. `rustshop.org`
         ///
         ///  Must be somewhat unique, or there's a risk of bucket name collions.
-        #[clap(long = "name", env = "RUSTSHOP_NAME")]
+        #[clap(env = "RUSTSHOP_NAME")]
         name: String,
 
         /// Base DNS domain to use for this shop. Eg. `rustshop.org`
@@ -140,7 +131,6 @@ pub enum BootstrapCommands {
         email_opts: EmailBootstrapOpts,
     },
     Account {
-        #[clap(long = "name")]
         name: String,
 
         /// AWS Region to bootstrap resources to
@@ -200,11 +190,8 @@ pub enum ConfigureCommands {
 }
 #[derive(Debug, Subcommand, Clone)]
 pub enum SwitchCommands {
-    #[clap(alias = "ac")]
     Account { name: String },
-    #[clap(alias = "cl")]
     Cluster { name: String },
-    #[clap(alias = "ns")]
     Namespace { name: String },
 }
 
