@@ -52,7 +52,7 @@
         doCheck = false;
       });
 
-      rustshop = craneLib.buildPackage (commonArgs // {
+      rustshopPkg = craneLib.buildPackage (commonArgs // {
         inherit cargoArtifacts;
         pname = "rustshop";
 
@@ -65,16 +65,16 @@
       });
 
     in {
-      packages = {
+      packages = rec {
         default = rustshop;
 
-        rustshop = rustshop;
+        rustshop = rustshopPkg;
 
         # alias `rustshop` to just `shop`
         shop = (pkgs.writeShellScriptBin "shop" "exec -a \"$0\" ${rustshop}/bin/rustshop  \"$@\"");
 
         # alias `kubectl` to just `kc`
-        kc = (pkgs.writeShellScriptBin "kc" "exec -a \"$0\" ${rustshop}/bin/kubectl \"$@\"");
+        kc = (pkgs.writeShellScriptBin "kc" "exec -a \"$0\" ${kubectl}/bin/kubectl \"$@\"");
 
         # wrap to auto inject account envs: terraform
         terraform = (pkgs.writeShellScriptBin "terraform" "exec -a \"$0\" ${rustshop}/bin/rustshop wrap ${pkgs.terraform}/bin/terraform \"$@\"");
