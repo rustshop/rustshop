@@ -83,12 +83,23 @@ inefficiencies, workarounds).
 
 Oftentimes, what a team needs is hand-made, cut to size
 solutions that is simplistic, easy to evolve and the
-group is not afraid to develop it). This creates a
+group is not afraid to develop it. This creates a
 synergy with universal tools and cohesive technical culture:
 If your CI/CD system is a small, easy to understand codebase
 and written in Rust, and your whole team knows Rust,
-it is trivial for anyone to maintain, debug and improve it.
+and everyone enjoys writing Rust you can be sure that your CI/CD
+system will work well and serve your shop well.
 
+## Invest in yourself
+
+Building a the tech stack and infrastructure has dynamics of trying to build an
+[an Engine from the game of Dominion](http://wiki.dominionstrategy.com/index.php/Engine).
+Each improvement allows to build next improvements even more efficiently. Quality
+pays for itself quite fast.
+
+Lots of human organizations have their wheels always spinning, yet not moving
+very far due to how inefficient they are. Don't be like that. Be mindful
+about efficiency at all times.
 
 ## DSLs should be avoided whenever possible
 
