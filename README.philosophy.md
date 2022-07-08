@@ -56,7 +56,7 @@ things similar way to begin with.
 
 His impossible without sticking to universal tools. 
 
-## Engineers are too afraid of building their own tooling
+## SWEs are often too afraid of building their own tooling
 
 IMO, SWE is primarily a craft. And what kind of craftsman would
 build tools for others and when having a need for a tool
@@ -64,9 +64,11 @@ in their own domain of work always go to a big box store to
 buy it? What kind of woodworker wouldn't have some furniture
 built with their own hands?
 
-Quite often I've experienced engineers dealing with huge,
-general purpose bloated, off the shelf tooling that doesn't
-fit their needs.
+Sure - one can't always always just build everything they
+need from scratch, but in the past I very often seen
+organizations and their engineers dealing with huge,
+general purpose bloated, off the shelf tooling that what
+critical for their work yet didn't fit their needs *at all*.
 
 There are domains and problems where it's possible to build
 a general purpose solution that suits quite well everyone.
@@ -81,7 +83,7 @@ with a general purpose solution leads to tons of complexity
 configuration options, etc.) and sacrifices (costs,
 inefficiencies, workarounds).
 
-Oftentimes, what a team needs is hand-made, cut to size
+Oftentimes, what a team really needs is a hand-made, cut to size
 solutions that is simplistic, easy to evolve and the
 group is not afraid to develop it. This creates a
 synergy with universal tools and cohesive technical culture:
@@ -89,6 +91,14 @@ If your CI/CD system is a small, easy to understand codebase
 and written in Rust, and your whole team knows Rust,
 and everyone enjoys writing Rust you can be sure that your CI/CD
 system will work well and serve your shop well.
+
+In the past software composability was much more difficult.
+Building your own usable tools was a lot of effort. But
+in the last decade things improved dramatically. It's possible
+to reuse bunch of readily available open source libraries,
+add the necessary logic to coordinate them and viola - one
+can build really good tooling in relatively short amount of time.
+
 
 ## Invest in yourself
 
