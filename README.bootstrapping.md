@@ -1,4 +1,4 @@
-## Bootstraping the shop
+# Bootstraping the shop
 
 This document describes how to bootstrap an AWS account
 using `rustshop` as a base infrastructure for your own "shop",
@@ -162,7 +162,7 @@ You can use `aws configure list-profiles` to list all profiles.
 
 Run:
 
-```
+```sh
 shop bootstrap shop --domain <domain> --email <email>
 shop bootstrap account prod --email <email>
 ```
@@ -186,6 +186,45 @@ Switch to the `prod` account:
 shop switch account prod
 ```
 
+#### Bootstrap cluster using `shop bootstrap`
+
+`rustshop` can automate the k8s cluster bootstrapping by:
+
+* creating a DNS zone for you and prompting you to configure it
+* creating the `kops` cluster configuration by calling `kops create cluster` with right arugments
+
+However since it is a multi-step process that you probably want
+to customize and understand, after this section we will describe
+the manual procedure that `shop bootstrap cluster` is automating.
+
+Call:
+
+```
+shop switch account prod
+shop bootstrap cluster prod --minimal
+```
+
+read, the prompts, configure and verify your DNS setup.
+
+Note that at the time of writting `--minimal` option does
+not lower the etcd EBS size to `1` and doesn't set up spot
+instance settings on the nodes.
+
+When ready call:
+
+```
+shop bootstrap cluster prod --minimal --dns-ready
+```
+
+then use `kops edit cluster` and `kops edit ig`, etc to customize
+to your desired settings and when ready, call:
+
+```
+kops update cluster --yes
+```
+
+#### Bootstrap cluster manually
+
 ### DNS
 
 `kops` cluster requires a DNS zone that it can use. We are going to use
@@ -195,7 +234,7 @@ Pick a DNS name for your cluster. `prod.k8s.<domain>` is recommended.
 
 To create the hosted zone for the cluster run:
 
-```
+```sh
 ID=$(uuidgen) && \
 aws route53 create-hosted-zone \
 --name prod.k8s.<domain> \
