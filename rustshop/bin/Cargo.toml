@@ -6,7 +6,6 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-color-eyre = { version = "0.6.1" }
 tracing = "0.1.35"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 rustshop-env = { version = "*", path = "../env/" }
@@ -17,3 +16,4 @@ derive_more = "0.99.17"
 serde = "1.0.138"
 serde_json = "1.0.82"
 tempfile = "3.3.0"
+rand = "0.8.5"

@@ -7,6 +7,7 @@ using `rustshop`.
 There will be some (relatively short) amount of manual work,
 and then the automation will take over.
 
+## Manual prep-work
 
 ### Pick a `<shopname>`
 
@@ -86,44 +87,63 @@ much larger course, and I can highly recommend it.
 
 ### Create your shop's monorepo git repository
 
+Make sure you have Nix installed and set up with flake support.
+See [README.onboarding](README.onboarding) for help.
+
 You can start with `git init .`, or create it on remotely
 and clone locally.
 
 Copy the [flake.nix](rustshop/templates/flake.nix) to the
-root dir. `git add flake.nix`
+root dir. Then run:
 
-### Bootstrap your infra
-
-This is the time where automation takes over.
-
-Make sure to clone your repo and set up Nix as in [Onboarding document](../README.onboarding.md)
-
-```
-~$ git clone https://github.com/rustshop/rustshop <shopname>
-~$ cd <shopname>/infra  # change dir to infra inside the cloned repo
-infra$ nix develop          # get the shell with all the infra tools you might need
+```sh
+git add flake.nix
+nix flake update
 ```
 
-`nix develop` might require you to perform some initial configuration. Please read
-the prompts.
+and you should finally be able to get the rustshop shell
+working with:
+
+```sh
+nix develop
+```
+
+From now on `nix develop` will be your entry point to working
+with your shop.
+
+A `shop` command appear in your shell:
+
+```
+myshop$ shop
+rustshop 
+Rustshop binary
+
+USAGE:
+    shop <SUBCOMMAND>
+
+OPTIONS:
+    -h, --help    Print help information
+
+SUBCOMMANDS:
+    add          Manually add rustshop components to track (see `bootstrap` instead)
+    bootstrap    Set up new amazon account/organization
+    configure    Configure user settings
+    get          Display certain values
+    help         Print this message or the help of the given subcommand(s)
+    switch       Switch current context (account, cluster, namespace)
+
+Help and feedback: https://github.com/rustshop/rustshop/discussions/categories/help-general
+```
+
+## Bootstrap your infra
 
 ### Set up `aws` command profile
 
-`aws` command should be available in shell and you can configure a profile
-using `aws configure --profile <shopname>-root` like this:
-
-Make sure the credentials here are from the IAM `iamadmin` user,
+**Make sure the credentials here are from the IAM `iamadmin` user**,
 and not from the root account root user!
 
-`nix develop` should have set your `$AWS_PROFILE` already:
-
-```
-infra$ nix develop
-Setting AWS_PROFILE=rustshop-root
-```
-
-so you can use just `aws configure`. Enter the access key information
-for IAM Admin User you created.
+`aws` command should be available in shell and you can configure a profile
+using `aws configure --profile <shopname>-root` like this:
 
 ```
 infra$ aws configure
@@ -133,41 +153,122 @@ Default region name [None]: us-east-1
 Default output format [None]:
 ```
 
+The Key ID and Secrect Access Key should be provided to you
+when you created `iamadmin` user.
+
 You can use `aws configure list-profiles` to list all profiles.
 
-### Bootstrap your account using `aws-bootstrap` command
-
-You can try `aws-bootstrap --help` to get a better understanding of usage
-and what is going on.
+### Bootstrap your account
 
 Run:
 
 ```
-aws-bootstrap --base <shopname>  --email infra@<domain>
+shop bootstrap shop --domain <domain> --email <email>
+shop bootstrap account prod --email <email>
 ```
 
 Follow the output, and in case of any issues
 [try asking for help](https://github.com/rustshop/rustshop/discussions/categories/help-general).
 
 You might verify in the AWS Console, under Organizations product that and organization was
-created, with two sub-accounts: `<shopname>-prod` and `<shopname>-dev`. Your email account
-should also receive emails about it.
-
-Edit `.env` file with the acount ids returned by the `aws-bootstrap`.
+created, with a `<shopname>-prod` sub-account.
 
 
-### Setup terraform
+### Bootstrap prod k8s cluster
 
-Change directory to `account/root` and use `terraform init`:
+Since everything is already installed, basic infrastructure bootstrapped and `rustshop`
+wraps `kops` to automatically supply the account-specific values, bootstrapping
+a fresh kuberentes cluster is very simple.
+
+Switch to the `prod` account:
 
 ```
-infra$ cd account/root
-root$ terraform init
-[...] # should work
-root$ terraform plan
-[...] # should work
-root$ terraform apply
-[...] # should work
+shop switch account prod
 ```
 
-Initialize Terraform in other accounts: `dev` & `prod`
+### DNS
+
+`kops` cluster requires a DNS zone that it can use. We are going to use
+Route 53 to host it.
+
+Pick a DNS name for your cluster. `prod.k8s.<domain>` is recommended.
+
+To create the hosted zone for the cluster run:
+
+```
+ID=$(uuidgen) && \
+aws route53 create-hosted-zone \
+--name prod.k8s.<domain> \
+--caller-reference $ID \
+| jq .DelegationSet.NameServers
+```
+
+You can use `aws route53 list-hosted-zones` and `aws route53 get-hosted-zone --id <zone-id>`
+to discover the hosted zones you've created.
+
+The output of this command should give you a list of DNS names to add as a NS record
+to your main domain. Depending on your DNS hosting provider, the details might
+differ, but it comes down to creating 4 NS records for `prod.k8s` in your <domain> host
+zone configuration.
+
+
+Verify your DNS with:
+
+```sh
+ping prod.k8s.<domain>
+dig prod.k8s.<domain>
+```
+
+Do not move forward until the DNS is ready.
+
+Create cluster configuration:
+
+```sh
+kops create cluster \
+  --cloud aws \
+  --zones "us-east-1f" \
+  --master-count 1  \
+  --master-size t3a.small \
+  --master-volume-size 8 \
+  --node-count 1 \
+  --node-size t3a.small \
+  --node-volume-size 8
+```
+
+If you are a cheapskate like me, you can
+change the EBS volumes to bare minimums with:
+
+```
+kops edit cluster # + add `volumeSize: 1` on each etcd instances (https://unix.stackexchange.com/a/598838/4389)
+```
+
+And use spot instances:
+
+```
+kops get ig
+kops get <masterig> # add `maxPrice: "0.01"
+kops get <nodesig> # add `maxPrice: "0.01"
+```
+
+After tweaking and verifing the settings you can deploy the cluster with:
+
+```
+kops update cluster --yes
+```
+
+This process can easily create up to 30 minutes, so be patient.
+
+You might need to run:
+
+```
+kops export kubecfg --admin
+```
+
+to update the kubectl context in `~/.kube/config`
+
+After the cluster is bootstrapped you should be
+able to execute:
+
+```
+kubectl get nodes
+```

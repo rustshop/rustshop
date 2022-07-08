@@ -23,10 +23,9 @@ pub type AppResult<T> = Result<T, AppError>;
 
 fn main() -> AppResult<()> {
     let res = main_inner();
-    #[cfg(nightly)]
     if let Err(ref report) = res {
         for suggestion in report.request_ref::<env::Suggestion>() {
-            eprintln!("Suggestion: {}", suggestion.0);
+            eprintln!("Suggestion: {}", suggestion);
         }
     }
 
@@ -113,6 +112,13 @@ fn main_inner() -> AppResult<()> {
                 info!("Using {profile} `aws` profile to bootstrap");
                 bootstrap_account(&name, &aws_region, &profile, &email_opts)?;
             }
+            BootstrapCommands::Cluster {
+                name,
+                dns_ready,
+                minimal,
+            } => {
+                bootstrap::bootstrap_cluster(name, dns_ready, minimal)?;
+            }
         },
         Commands::Switch(cmd) => {
             let mut env = Env::load().change_context(AppError)?;
@@ -146,13 +152,40 @@ fn main_inner() -> AppResult<()> {
                 }
             }
         }
-        Commands::Get(GetCommands::Context) => {
-            let env = Env::load().change_context(AppError)?;
-            let context = env.get_context().change_context(AppError)?;
-            env.write_ctx_info_to(context, &mut std::io::stdout())
-                .report()
-                .change_context(AppError)?;
-        }
+        Commands::Get(cmd) => match cmd {
+            GetCommands::Context => {
+                let env = Env::load().change_context(AppError)?;
+                let context = env.get_context().change_context(AppError)?;
+                env.write_ctx_info_to(context, &mut std::io::stdout())
+                    .report()
+                    .change_context(AppError)?;
+            }
+            GetCommands::Account { profile } => {
+                let env = Env::load().change_context(AppError)?;
+                let context = env.get_context().change_context(AppError)?;
+                if let Some(acc) = context.account {
+                    if profile {
+                        println!("{}", acc.1.user.aws_profile);
+                    } else {
+                        println!("{}", acc.0);
+                    }
+                }
+            }
+            GetCommands::Cluster => {
+                let env = Env::load().change_context(AppError)?;
+                let context = env.get_context().change_context(AppError)?;
+                if let Some(cluster) = context.cluster {
+                    println!("{}", cluster.0);
+                }
+            }
+            GetCommands::Namespace => {
+                let env = Env::load().change_context(AppError)?;
+                let context = env.get_context().change_context(AppError)?;
+                if let Some(ns) = context.namespace {
+                    println!("{}", ns);
+                }
+            }
+        },
         Commands::Wrap { bin, args } => {
             wrap::exec_wrapped_bin(bin, args).change_context(AppError)?
         }

@@ -83,3 +83,30 @@ Resources:
               BoolIfExists:
                 aws:MultiFactorAuthPresent: false
 
+  # Kops State S3 Bucket
+  KopsOidcPublic:
+    Type: "AWS::S3::Bucket"
+    Properties:
+      BucketName:
+        Fn::Sub: "${AWS::StackName}-oidc-public"
+      LifecycleConfiguration:
+        Rules:
+          - Id: "ExpirationRule"
+            Status: "Enabled"
+            NoncurrentVersionExpirationInDays: 90
+
+  # KopsOidc State S3 Bucket Policy
+  KopsOidcPublicPolicy:
+    Type: "AWS::S3::BucketPolicy"
+    Properties:
+      Bucket:
+        Ref: KopsOidcPublic
+      PolicyDocument:
+        Statement:
+          # Allow public to read from the bucket
+          # https://web.archive.org/web/20220708024642/https://kops.sigs.k8s.io/getting_started/aws/
+          - Action: "s3:GetObject"
+            Effect: "Allow"
+            Principal: "*"
+            Resource:
+              Fn::Sub: "arn:aws:s3:::${KopsOidcPublic}/*"

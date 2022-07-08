@@ -11,6 +11,7 @@ pub use cfg::*;
 
 mod ioutil;
 
+#[derive(Display)]
 pub struct Suggestion(&'static str);
 
 #[derive(Debug, Display)]
@@ -448,20 +449,10 @@ impl Env {
             domain: format!("{}.k8s.{}", cluster_name, shop_domain),
         };
 
-        // let user_cluster = UserClusterCfg {
-        //     kube_ctx: format!("{}.k8s.{}", cluster_name, shop_domain),
-        // };
-
         account_cfg
             .clusters
             .entry(cluster_name.to_owned())
             .or_insert(shop_cluster.clone());
-
-        // account_cfg
-        //     .user
-        //     .clusters
-        //     .entry(cluster_name.to_owned())
-        //     .or_insert(user_cluster.clone());
 
         self.write()?;
 
@@ -604,7 +595,7 @@ impl Env {
         Ok(EnvContext {
             account: Some((account.0.to_owned(), account.1.into())),
             cluster: Some((cluster.0.to_owned(), cluster.1.into())),
-            ..EnvContext::default()
+            namespace: context_path.namespace.to_owned(),
         })
     }
 

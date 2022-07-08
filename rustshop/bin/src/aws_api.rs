@@ -1,5 +1,6 @@
 use derive_more::Display;
 use error_stack::{bail, Context, IntoReport, Result, ResultExt};
+use rand::{distributions::Alphanumeric, thread_rng, Rng};
 use rustshop_env::Env;
 
 use std::process::Command;
@@ -95,6 +96,32 @@ pub struct AccountList {
 #[serde(rename_all(deserialize = "PascalCase"))]
 pub struct OrganizationDetails {
     pub organization: Organization,
+}
+
+#[derive(Deserialize, Debug, Clone)]
+#[serde(rename_all(deserialize = "PascalCase"))]
+pub struct HostedZone {
+    pub id: String,
+    pub name: String,
+}
+
+#[derive(Deserialize, Debug, Clone)]
+#[serde(rename_all(deserialize = "PascalCase"))]
+pub struct ListHostedZones {
+    pub hosted_zones: Vec<HostedZone>,
+}
+
+#[derive(Deserialize, Debug, Clone)]
+#[serde(rename_all(deserialize = "PascalCase"))]
+pub struct DelegationSet {
+    pub name_servers: Vec<String>,
+}
+
+#[derive(Deserialize, Debug, Clone)]
+#[serde(rename_all(deserialize = "PascalCase"))]
+pub struct GetHostedZone {
+    pub hosted_zone: HostedZone,
+    pub delegation_set: DelegationSet,
 }
 
 #[derive(Clone, Debug)]
@@ -278,5 +305,48 @@ impl Aws {
         .report()
         .change_context(AwsError::WrongResponse)?;
         Ok(())
+    }
+
+    pub fn list_hosted_zones(&self) -> AwsResult<Vec<HostedZone>> {
+        Ok(self
+            .run_cmd::<ListHostedZones>(&["route53", "list-hosted-zones"], false)?
+            .ok_or(AwsError::WrongResponse)?
+            .hosted_zones)
+    }
+
+    pub fn get_hosted_zone(&self, id: &str) -> AwsResult<GetHostedZone> {
+        Ok(self
+            .run_cmd::<GetHostedZone>(&["route53", "get-hosted-zone", "--id", id], false)?
+            .ok_or(AwsError::WrongResponse)?)
+    }
+
+    pub(crate) fn create_hosted_zone(
+        &self,
+        domain: &str,
+        caller_id: impl Into<Option<String>>,
+    ) -> AwsResult<()> {
+        let caller_id = caller_id.into().unwrap_or_else(|| Self::random_caller_id());
+
+        self.run_cmd_raw(
+            &[
+                "route53",
+                "create-hosted-zone",
+                "--name",
+                domain,
+                "--caller-reference-id",
+                &caller_id,
+            ],
+            false,
+        )?
+        .ok_or(AwsError::WrongResponse)?;
+        Ok(())
+    }
+
+    pub fn random_caller_id() -> String {
+        thread_rng()
+            .sample_iter(&Alphanumeric)
+            .take(30)
+            .map(char::from)
+            .collect()
     }
 }

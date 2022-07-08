@@ -14,7 +14,5 @@ if [ -e "$RUSTSHOP_ROOT/.rustshop/user.shrc" ]; then
 . "$RUSTSHOP_ROOT/.rustshop/user.shrc"
 fi
 
-alias k=kubectl
-
 # Completions
 eval "`rustshop --completions \`basename $SHELL\``"

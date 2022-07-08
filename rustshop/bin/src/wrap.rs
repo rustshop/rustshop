@@ -7,7 +7,7 @@ use std::{
 
 use derive_more::Display;
 use error_stack::{Context, IntoReport, Result, ResultExt};
-use rustshop_env::{AccountCfg, ClusterCfg, Env};
+use rustshop_env::{AccountCfg, Env, ShopAccountCfg, ShopClusterCfg};
 use tracing::{debug, info, trace};
 
 #[derive(Debug, Display)]
@@ -42,6 +42,7 @@ pub fn exec_wrapped_bin(bin: OsString, args: Vec<OsString>) -> WrapResult<()> {
             val = "true",
             "Not modifing the environment - due to env var flag"
         );
+        trace!("Exec: {cmd:?}");
         Err(cmd.args(&args).exec())
             .report()
             .change_context(WrapError::ExecFailed)?;
@@ -57,8 +58,6 @@ pub fn exec_wrapped_bin(bin: OsString, args: Vec<OsString>) -> WrapResult<()> {
         .account
         .expect("account set checked in get_context_account")
         .1;
-
-    cmd.args(&args);
 
     if is_terraform_init(&bin_base_name, &args) {
         info!("Executing with `terraform init` workaround");
@@ -97,13 +96,45 @@ pub fn exec_wrapped_bin(bin: OsString, args: Vec<OsString>) -> WrapResult<()> {
 
         trace!("Setting `kops` envs");
         set_kops_envs_on(
-            account_cfg,
-            &context.cluster.expect("get_context_cluster checked it").1,
+            &account_cfg.shop,
+            &context
+                .cluster
+                .expect("get_context_cluster checked it")
+                .1
+                .shop,
             &mut cmd,
         )?;
     }
-    trace!(cmd = format!("{cmd:?}"), "exec");
 
+    match bin_base_name.to_str() {
+        // helm and kubectl have the similiar CLI behavior and they tolerate multiple `--context` and `--namespace`
+        // arguments, with the following ones overrding the previous ones; so we can just add these as defaults
+        n @ Some("kubectl") | n @ Some("helm") => {
+            let cfg = env.get_context().change_context(WrapError::EnvFailure)?;
+
+            if let Some(cluster) = cfg.cluster {
+                trace!("Adding `--context` to `kubectl`");
+                cmd.args(&[
+                    // well, actually helm named it differently
+                    if n == Some("helm") {
+                        "--kube-context"
+                    } else {
+                        "--context"
+                    },
+                    &cluster.1.user.kube_ctx,
+                ]);
+                if let Some(namespace) = cfg.namespace {
+                    trace!("Adding `--namespace` to `kubectl`");
+                    cmd.args(&["--namespace", &namespace]);
+                }
+            }
+        }
+        _ => {}
+    }
+
+    cmd.args(&args);
+
+    trace!("Exec: {cmd:?}");
     Err(cmd.exec())
         .report()
         .change_context(WrapError::ExecFailed)?;
@@ -140,6 +171,7 @@ pub fn set_aws_envs_on<'cmd>(
 
     cmd
 }
+
 /// Set the variables like for `aws` CLI, but prefixed with `TF_VAR_` so they
 /// are visible as Terraform variables.
 pub fn set_tf_aws_envs_on<'cmd>(
@@ -183,12 +215,12 @@ pub fn set_tf_aws_envs_on<'cmd>(
 }
 
 pub fn set_kops_envs_on<'cmd>(
-    account_cfg: &AccountCfg,
-    cluster_cfg: &ClusterCfg,
+    account_cfg: &ShopAccountCfg,
+    cluster_cfg: &ShopClusterCfg,
     cmd: &'cmd mut Command,
 ) -> WrapResult<&'cmd mut Command> {
     let kops_state_store = get_kops_state_store_url(account_cfg);
-    let kops_cluster_name = &cluster_cfg.shop.domain;
+    let kops_cluster_name = &cluster_cfg.domain;
 
     debug!(KOPS_STATE_STORE = kops_state_store, "Setting");
     cmd.env("KOPS_STATE_STORE", &kops_state_store);
@@ -199,9 +231,6 @@ pub fn set_kops_envs_on<'cmd>(
     Ok(cmd)
 }
 
-pub fn get_kops_state_store_url(account_cfg: &AccountCfg) -> String {
-    format!(
-        "s3://{}-bootstrap-kops-state",
-        account_cfg.shop.bootstrap_name
-    )
+pub fn get_kops_state_store_url(account_cfg: &ShopAccountCfg) -> String {
+    format!("s3://{}-bootstrap-kops-state", account_cfg.bootstrap_name)
 }

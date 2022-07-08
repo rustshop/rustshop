@@ -144,6 +144,18 @@ pub enum BootstrapCommands {
         #[clap(flatten)]
         email_opts: EmailBootstrapOpts,
     },
+    Cluster {
+        /// Cluster name. Eg. `prod`. Default to current account name.
+        name: Option<String>,
+
+        /// Set to true *only* after cluster DNS is set up and working
+        #[clap(long = "dns-ready")]
+        dns_ready: bool,
+
+        /// Bootstrap minimal, cheapest working cluster possible (1 node + 1 worker, smallest EBSs, spot instances)
+        #[clap(long = "dns-ready")]
+        minimal: bool,
+    },
 }
 
 #[derive(Parser, Debug, Clone)]
@@ -171,7 +183,6 @@ pub struct EmailBootstrapOpts {
 pub enum ConfigureCommands {
     Account {
         /// Account name
-        #[clap(long = "name")]
         name: String,
 
         /// AWS Profile to use with this account (typically from `~/.aws/config`)
@@ -180,7 +191,6 @@ pub enum ConfigureCommands {
     },
     Cluster {
         /// Cluster name
-        #[clap(long = "name")]
         name: String,
 
         /// Kube ctx to use with this cluster (typically from `~/.kube/config`)
@@ -199,4 +209,10 @@ pub enum SwitchCommands {
 pub enum GetCommands {
     #[clap(alias = "c")]
     Context,
+    Account {
+        #[clap(long = "profile")]
+        profile: bool,
+    },
+    Cluster,
+    Namespace,
 }

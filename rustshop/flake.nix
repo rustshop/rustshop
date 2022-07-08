@@ -56,6 +56,8 @@
         inherit cargoArtifacts;
         pname = "rustshop";
 
+        cargoExtraArgs = "--bin rustshop";
+
         postInstall = ''
           mkdir -p "$out/usr/share/rustshop"
           cp ./shell-hook.sh $out/usr/share/rustshop
@@ -64,12 +66,15 @@
 
     in {
       packages = {
+        default = rustshop;
+
         rustshop = rustshop;
 
         # alias `rustshop` to just `shop`
         shop = (pkgs.writeShellScriptBin "shop" "exec -a \"$0\" ${rustshop}/bin/rustshop  \"$@\"");
 
-        default = rustshop;
+        # alias `kubectl` to just `kc`
+        kc = (pkgs.writeShellScriptBin "kc" "exec -a \"$0\" ${rustshop}/bin/kubectl \"$@\"");
 
         # wrap to auto inject account envs: terraform
         terraform = (pkgs.writeShellScriptBin "terraform" "exec -a \"$0\" ${rustshop}/bin/rustshop wrap ${pkgs.terraform}/bin/terraform \"$@\"");
@@ -82,6 +87,9 @@
 
         # wrap to auto inject account envs: aws
         kubectl = (pkgs.writeShellScriptBin "kubectl" "exec -a \"$0\" ${rustshop}/bin/rustshop wrap ${pkgs.kubectl}/bin/kubectl \"$@\"");
+
+        # wrap to auto inject account envs: aws
+        helm = (pkgs.writeShellScriptBin "helm" "exec -a \"$0\" ${rustshop}/bin/rustshop wrap ${pkgs.kubernetes-helm}/bin/helm \"$@\"");
       };
 
       devShell = pkgs.mkShell {

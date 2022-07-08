@@ -8,18 +8,17 @@ variable "SHOPNAME" {
   default     = ""
 }
 
-variable "ACCOUNT_SUFFIX" {
-  description = "Account Name Suffix (eg. root, prod, or dev)"
+variable "ACCOUNT_BOOTSTRAP_NAME" {
+  description = "Account Name used during bootstrap"
   default     = ""
 }
 
+variable "ACCOUNT_BOOTSTRAP_AWS_REGION" {
+  description = "AWS Region used during bootstrap"
+  default     = ""
+}
 variable "AWS_REGION" {
   description = "AWS Region"
-  default     = ""
-}
-
-variable "AWS_ACCOUNT_ID" {
-  description = "AWS Account ID"
   default     = ""
 }
 
