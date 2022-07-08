@@ -1,9 +1,5 @@
 # Set up local dev environment
 
-## Clone reposity
-
-Clone this repository locally, with `git clone <repo-url>`, then `cd <repo-dir>`
-
 ## Set up Nix
 
 ### Install nix
@@ -24,5 +20,22 @@ nix (Nix) 2.9.1
 
 https://nixos.wiki/wiki/Flakes#Installing_flakes
 
-The end result is having `nix develop` work (it might take
-a while for it download all the neccessary files.
+
+And that's kind of it. From now one the Nix automation should
+take care of everything for you.
+
+## Clone repository
+
+Clone this repository locally, with `git clone <repo-url>`, then `cd <repo-dir>`,
+
+If your Nix is set up properly `nix develop` should just work (though it might take
+a while to download all the necessary files and build all the internal tooling). In
+the meantime you can read other documentation.
+
+
+## Account setup (TODO)
+
+Eventually we will have some "employee" management system that the CI/CD, infra access etc.
+will rely on. Possibly the first PR each new employee does is some automatically generated
+user-data file including their PGP key, github username, etc.
+

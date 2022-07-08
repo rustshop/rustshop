@@ -57,8 +57,8 @@ business value using Rust in your free time for no pay or benefits!
 
 ## Links
 
+* [Onboarding](./README.onboarding.md) - setting up dev env used in rustshop
 * [Infra Bootstrapping](README.bootstrapping.md) - how to set up
   initial infrastructure.
-* [Onboarding](./README.onboarding.md) - setting up development for new employees.
 * [Tech Stack](./README.techstack.md) - general information about technologies used.
 * [Technical philosophy](./README.philosophy.md)
