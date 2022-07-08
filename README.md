@@ -8,7 +8,7 @@ have some DevOps interest. However it might be useful for wide group of people:
 
 * `rustshop` project is a bit like a tutorial for setting up AWS/k8s stack.
 * `rustshop` binary is well integrated tool to make working with 
-  like `terraform`, `kubectl`, `kops`, `helm` and other utitli much more convenient
+  like `terraform`, `kubectl`, `kops`, `helm` and other utilities much more convenient
   (in particular when dealing with multiple accounts/profiles/clusters).
 * `rustshop` is trying to build a well oiled, flexible and extremely powerful IaaC,
    gitops based cloud software shop template that can be a source of inspiration.
