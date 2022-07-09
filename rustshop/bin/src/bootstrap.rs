@@ -7,7 +7,7 @@ use std::{
 };
 
 use error_stack::{IntoReport, ResultExt};
-use rustshop_env::Env;
+use rustshop_env::{AccountCfg, Env};
 use tempfile::NamedTempFile;
 use tracing::{info, trace, warn};
 
@@ -205,36 +205,46 @@ where
 }
 
 pub fn bootstrap_cluster(
+    account_name: Option<String>,
     cluster_name: Option<String>,
     dns_ready: bool,
     minimal: bool,
 ) -> AppResult<()> {
     let mut env = Env::load().change_context(AppError)?;
 
-    let env_context = env.get_context_account().change_context(AppError)?;
-
-    let (account, account_cfg) = env_context
-        .account
-        .expect("get_context_account() returned some");
+    let account_name = if let Some(account_name) = account_name {
+        account_name
+    } else {
+        env.get_context_account()
+            .change_context(AppError)?
+            .account
+            .expect("get_account_context took care of it")
+            .0
+    };
 
     // default account name if no name provided
-    let cluster_name = cluster_name.unwrap_or_else(|| account.clone());
+    let cluster_name = cluster_name.unwrap_or_else(|| account_name.clone());
 
-    let account_ref = env.get_account_ref(&account).change_context(AppError)?;
+    let account_cfg: AccountCfg = env
+        .get_account_ref(&account_name)
+        .change_context(AppError)?
+        .into();
 
-    let cluster_cfg = if let Some(cluster_cfg) = account_ref
+    let cluster_cfg = if let Some(cluster_cfg) = env
+        .get_account_ref(&account_name)
+        .change_context(AppError)?
         .get_cluster_ref_opt(&cluster_name)
         .change_context(AppError)?
     {
         cluster_cfg.shop.clone()
     } else {
-        env.add_cluster(&account, &cluster_name)
+        env.add_cluster(&account_name, &cluster_name)
             .change_context(AppError)?
     };
 
     let aws = aws_api::Aws::new(
-        Some(account_cfg.user.aws_profile),
-        account_cfg.shop.bootstrap_aws_region,
+        Some(account_cfg.user.aws_profile.clone()),
+        account_cfg.shop.bootstrap_aws_region.clone(),
     );
 
     let zone = loop {
@@ -281,11 +291,12 @@ pub fn bootstrap_cluster(
 
     let mut cmd = Command::new("kops");
 
-    let account_cfg = env
-        .get_shop_account_ref(&account)
-        .change_context(AppError)?;
+    // let account_cfg = env
+    //     .get_shop_account_ref(&account_name)
+    //     .change_context(AppError)?;
 
-    super::wrap::set_kops_envs_on(account_cfg, &cluster_cfg, &mut cmd).change_context(AppError)?;
+    super::wrap::set_kops_envs_on(&account_cfg.shop, &cluster_cfg, &mut cmd)
+        .change_context(AppError)?;
 
     cmd.args(&[
         "create",
@@ -293,10 +304,10 @@ pub fn bootstrap_cluster(
         "--cloud",
         "aws",
         "--zones",
-        &format!("{}1", account_cfg.bootstrap_aws_region),
+        &format!("{}1", account_cfg.shop.bootstrap_aws_region),
         &format!(
             "--discovery-store=s3://{}-bootstrap-kops-oidc-public/{}/discovery",
-            account_cfg.bootstrap_name, cluster_cfg.domain
+            account_cfg.shop.bootstrap_name, cluster_cfg.domain
         ),
     ]);
 

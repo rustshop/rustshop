@@ -57,8 +57,9 @@ business value using Rust in your free time for no pay or benefits!
 
 ## Links
 
-* [Onboarding](./README.onboarding.md) - setting up dev env used in rustshop
-* [Infra Bootstrapping](README.bootstrapping.md) - how to set up
-  initial infrastructure.
+* [Onboarding](./README.onboarding.md) - setting your dev env to work with rustshop tooling
+* [Infra Bootstrapping](README.bootstrapping.md) - setting up new AWS infrastructure,
+  and bootstrapping basic services using `rustshop bootstrap` functionality
+* [Standalone usage](README.standalone.md) - using `rustshop` binary in an existing org infrastructure
 * [Tech Stack](./README.techstack.md) - general information about technologies used.
 * [Technical philosophy](./README.philosophy.md)

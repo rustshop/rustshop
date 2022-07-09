@@ -67,9 +67,20 @@ fn main_inner() -> AppResult<()> {
                 // add a cluster right away
                 env.add_cluster(&name, &name).change_context(AppError)?;
             }
-            AddCommands::Cluster { name } => {
+            AddCommands::Cluster { name, account } => {
                 let mut env = Env::load().change_context(AppError)?;
-                env.add_cluster(&name, &name).change_context(AppError)?;
+
+                let account = if let Some(account) = account {
+                    account
+                } else {
+                    let context = env.get_context_account().change_context(AppError)?;
+                    context
+                        .account
+                        .expect("get_account_context took care of it")
+                        .0
+                };
+
+                env.add_cluster(&account, &name).change_context(AppError)?;
             }
         },
         Commands::Bootstrap(cmd) => match cmd {
@@ -116,8 +127,9 @@ fn main_inner() -> AppResult<()> {
                 name,
                 dns_ready,
                 minimal,
+                account,
             } => {
-                bootstrap::bootstrap_cluster(name, dns_ready, minimal)?;
+                bootstrap::bootstrap_cluster(account, name, dns_ready, minimal)?;
             }
         },
         Commands::Switch(cmd) => {
@@ -146,8 +158,8 @@ fn main_inner() -> AppResult<()> {
                     env.configure_account(&name, &profile)
                         .change_context(AppError)?;
                 }
-                opts::ConfigureCommands::Cluster { name, ctx } => {
-                    env.configure_cluster(&name, &ctx)
+                opts::ConfigureCommands::Cluster { name, account, ctx } => {
+                    env.configure_cluster(account.as_deref(), &name, &ctx)
                         .change_context(AppError)?;
                 }
             }

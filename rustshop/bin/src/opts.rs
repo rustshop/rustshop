@@ -98,8 +98,10 @@ pub enum AddCommands {
         aws_region: String,
     },
     Cluster {
-        #[clap(long = "name")]
         name: String,
+
+        #[clap(name = "account")]
+        account: Option<String>,
     },
 }
 
@@ -148,6 +150,9 @@ pub enum BootstrapCommands {
         /// Cluster name. Eg. `prod`. Default to current account name.
         name: Option<String>,
 
+        #[clap(name = "account")]
+        account: Option<String>,
+
         /// Set to true *only* after cluster DNS is set up and working
         #[clap(long = "dns-ready")]
         dns_ready: bool,
@@ -192,6 +197,9 @@ pub enum ConfigureCommands {
     Cluster {
         /// Cluster name
         name: String,
+
+        #[clap(name = "account")]
+        account: Option<String>,
 
         /// Kube ctx to use with this cluster (typically from `~/.kube/config`)
         #[clap(long = "ctx", env = "KUBE_CTX")]

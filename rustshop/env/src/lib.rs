@@ -483,13 +483,23 @@ impl Env {
             .into())
     }
 
-    pub fn configure_cluster(&mut self, name: &str, ctx: &str) -> EnvResult<ClusterCfg> {
-        let account_name = self
-            .get_context()?
-            .account
-            .ok_or_else(|| EnvError::AccountNotSet)?;
+    pub fn configure_cluster(
+        &mut self,
+        account_name: Option<&str>,
+        name: &str,
+        ctx: &str,
+    ) -> EnvResult<ClusterCfg> {
+        let account_name = if let Some(account_name) = account_name {
+            account_name.to_owned()
+        } else {
+            self.get_context()?
+                .account
+                .ok_or_else(|| EnvError::AccountNotSet)?
+                .0
+                .to_owned()
+        };
 
-        let mut account_cfg = self.get_account_mut(&account_name.0)?;
+        let mut account_cfg = self.get_account_mut(&account_name)?;
 
         let cluster_cfg = account_cfg.configure_cluster(name, ctx)?;
 
@@ -837,8 +847,8 @@ impl<'env> EnvAccountRef<'env> {
 }
 
 pub struct EnvAccountMut<'env> {
-    shop: &'env mut ShopAccountCfg,
-    user: &'env mut UserAccountCfg,
+    pub shop: &'env mut ShopAccountCfg,
+    pub user: &'env mut UserAccountCfg,
 }
 
 impl<'env> EnvAccountMut<'env> {
@@ -860,6 +870,28 @@ impl<'env> EnvAccountMut<'env> {
                 }),
             },
         )
+    }
+
+    pub fn get_cluster_ref_opt(&self, name: &str) -> EnvResult<Option<EnvClusterRef>> {
+        Ok(
+            match (self.shop.clusters.get(name), self.user.clusters.get(name)) {
+                (Some(shop), Some(user)) => Some(EnvClusterRef { shop, user }),
+                (None, None) => None,
+                (None, Some(_)) => {
+                    bail!(EnvError::InconsistentClusterData {
+                        name: name.to_owned()
+                    })
+                }
+                (Some(_), None) => None,
+            },
+        )
+    }
+    pub fn get_cluster_ref(&self, name: &str) -> EnvResult<EnvClusterRef> {
+        Ok(self
+            .get_cluster_ref_opt(name)?
+            .ok_or_else(|| EnvError::ClusterDoesNotExist {
+                name: name.to_owned(),
+            })?)
     }
 
     pub fn configure_cluster(&mut self, name: &str, kube_ctx: &str) -> EnvResult<ClusterCfg> {
