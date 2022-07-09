@@ -1,6 +1,6 @@
-# RustShop (meta)
+# RustShop
 
-`rustshop` is an attempt at building a template and utilities
+RustShop is an attempt at building a template and utilities
 to help quickly set up and manage a production grade cloud-based system.
 
 The core target audience are Rust developers that are familiar or willing to learn Nix and
