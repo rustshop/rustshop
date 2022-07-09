@@ -1,13 +1,13 @@
-use app_common::AppResult;
 use axum::{response::Html, routing::get};
 use clap::Args;
+use common_app::AppResult;
 
 struct App;
 
 #[derive(Args, Debug, Clone)]
 struct Opts;
 
-impl app_common::App for App {
+impl common_app::App for App {
     type Opts = Opts;
 
     fn pre_serve(&mut self, router: axum::Router) -> AppResult<axum::Router> {
@@ -17,7 +17,7 @@ impl app_common::App for App {
 
 #[tokio::main]
 async fn main() -> AppResult<()> {
-    app_common::run_axum_app(App).await
+    common_app::run_axum_app(App).await
 }
 
 async fn handler() -> Html<&'static str> {

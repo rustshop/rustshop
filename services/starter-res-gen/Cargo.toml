@@ -1,17 +1,15 @@
 [package]
-name = "starter"
+name = "starter-res-gen"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [[bin]]
-name = "starter"
+name = "starter-res-gen"
 path = "src/main.rs"
 
 [dependencies]
 tracing = "0.1.35"
-common-app = { version = "*", path = "../common-app/" }
+common-res-gen = { version = "*", path = "../common-res-gen/" }
 clap = { version = "3.1.6", features = [ "derive", "env" ] }
 error-stack = "0.1.1"
-tokio = { version = "1.19.2", features = ["macros", "rt", "rt-multi-thread"] }
-axum = "0.5.11"

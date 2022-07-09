@@ -48,34 +48,43 @@
         ];
       };
 
+      # filter source code at path `src` to include only the list of `modules`
+      filterModules = modules: src:
+        let
+          basePath = toString src + "/";
+        in
+          lib.cleanSourceWith  {
+          filter = (path: type:
+            let
+              relPath = lib.removePrefix basePath (toString path);
+              includePath =
+                (type == "directory" && builtins.match "^[^/]+$" relPath != null) ||
+                lib.any
+                  (re: builtins.match re relPath != null)
+                  (["Cargo.lock" "Cargo.toml" ".*/Cargo.toml"] ++ builtins.concatLists (map (name: [name "${name}/.*"]) modules));
+            in
+              # uncomment to debug:
+              # builtins.trace "${relPath}: ${lib.boolToString includePath}"
+              includePath
+          );
+          src = ./.;
+        };
+
       workspaceDeps = craneLib.buildDepsOnly (commonArgs // {
         pname = "services-workspace-deps";
       });
 
       # a function to define both package and docker build for a given service binary
-      servicesApp = name: rec {
+      serviceApp = name: rec {
         package = craneLib.buildPackage (commonArgs // {
           cargoArtifacts = workspaceDeps;
           pname = name;
 
-          src = let
-            basePath = toString ./. + "/";
-          in
-            lib.cleanSourceWith  {
-            filter = (path: type:
-              let
-                strPath = lib.removePrefix basePath (toString path);
-                includePath = lib.any (re: builtins.match re strPath != null) ["Cargo.*" "app-common" "app-common/.*" name "${name}/.*" ];
-              in
-              # uncomment to debug:
-              # builtins.trace "${strPath}: ${lib.boolToString includePath}"
-               includePath
-            );
-            src = ./.;
-          };
+          src = filterModules ["common-app" name] ./.;
 
           cargoExtraArgs = "--bin ${name}";
         });
+
         docker = pkgs.dockerTools.buildLayeredImage {
           name = name;
           contents = [ package ];
@@ -90,15 +99,38 @@
         };
       };
 
+      resGen = shortName:
+      let
+        name = "${shortName}-res-gen";
+      in
+        craneLib.buildPackage (commonArgs // {
+        cargoArtifacts = workspaceDeps;
+        pname = name;
+
+        src = filterModules ["common-res-gen" name] ./.;
+
+        cargoExtraArgs = "--bin ${name}";
+      });
+
       apps = {
-        starter = servicesApp "starter";
+        starter = serviceApp "starter";
+      };
+
+      resGens = {
+        starter = resGen "starter";
       };
 
     in {
-      packages = rec {
-        default = starter;
+      packages = {
+        default = apps.starter.package;
 
-        starter = apps.starter.package;
+        app = {
+          starter = apps.starter.package;
+        };
+
+        res = {
+          starter = resGens.starter;
+        };
 
         docker = {
           starter = apps.starter.docker;

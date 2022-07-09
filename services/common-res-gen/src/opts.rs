@@ -1,12 +1,12 @@
 use clap::{Args, FromArgMatches, Parser};
 
 #[derive(Parser, Debug, Clone)]
-// help_template to basically disable `app-common` showing up as the name
+// help_template to basically disable `resource-common` showing up as the name
 // of the project
 #[clap(infer_subcommands = true, help_template = "{usage}\n\n{all-args}")]
-pub struct Opts<AppOpts>
+pub struct Opts<GeneratorOpts>
 where
-    AppOpts: FromArgMatches + Args,
+    GeneratorOpts: FromArgMatches + Args,
 {
     #[clap(
         long = "listen",
@@ -17,12 +17,12 @@ where
     pub listen_port: u16,
 
     #[clap(flatten)]
-    pub app_opts: AppOpts,
+    pub app_opts: GeneratorOpts,
 }
 
-impl<AppOpts> Opts<AppOpts>
+impl<GeneratorOpts> Opts<GeneratorOpts>
 where
-    AppOpts: FromArgMatches + Args,
+    GeneratorOpts: FromArgMatches + Args,
 {
     pub fn from_args() -> Self {
         Opts::parse()

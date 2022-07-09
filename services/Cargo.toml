@@ -1,6 +1,7 @@
 [workspace]
 members = [
-	"app-common",
+	"common-app",
+	"common-res-gen",
 	"starter",
+	"starter-res-gen",
 ]
-
