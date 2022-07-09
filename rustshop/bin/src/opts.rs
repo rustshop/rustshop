@@ -208,9 +208,16 @@ pub enum ConfigureCommands {
 }
 #[derive(Debug, Subcommand, Clone)]
 pub enum SwitchCommands {
-    Account { name: String },
-    Cluster { name: String },
-    Namespace { name: String },
+    Account {
+        name: String,
+    },
+    Cluster {
+        name: String,
+    },
+    #[clap(alias = "ns")]
+    Namespace {
+        name: String,
+    },
 }
 
 #[derive(Debug, Subcommand, Clone)]
