@@ -2,6 +2,14 @@
 name = "rustshop-env"
 version = "0.1.0"
 edition = "2021"
+authors = ["Dawid Ciężarkiewicz <dpc@dpc.pw>"]
+description = "A common library for handling `rustshop` utility environment/context"
+documentation = "https://github.com/rustshop/rustshop"
+homepage = "https://github.com/rustshop/rustshop"
+repository = "https://github.com/rustshop/rustshop"
+keywords = ["kubernetes", "infra", "cloud"]
+license = "MPL-2.0"
+readme = "README.md"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
