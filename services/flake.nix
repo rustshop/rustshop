@@ -29,6 +29,7 @@
       pkgs = import nixpkgs {
         inherit system;
       };
+      lib = pkgs.lib;
       fenix-pkgs = fenix.packages.${system};
       fenix-channel = fenix-pkgs.complete;
 
@@ -56,6 +57,22 @@
         package = craneLib.buildPackage (commonArgs // {
           cargoArtifacts = workspaceDeps;
           pname = name;
+
+          src = let
+            basePath = toString ./. + "/";
+          in
+            lib.cleanSourceWith  {
+            filter = (path: type:
+              let
+                strPath = lib.removePrefix basePath (toString path);
+                includePath = lib.any (re: builtins.match re strPath != null) ["Cargo.*" "app-common" "app-common/.*" name "${name}/.*" ];
+              in
+              # uncomment to debug:
+              # builtins.trace "${strPath}: ${lib.boolToString includePath}"
+               includePath
+            );
+            src = ./.;
+          };
 
           cargoExtraArgs = "--bin ${name}";
         });
