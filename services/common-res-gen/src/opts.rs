@@ -8,16 +8,16 @@ pub struct Opts<GeneratorOpts>
 where
     GeneratorOpts: FromArgMatches + Args,
 {
-    #[clap(
-        long = "listen",
-        short = 'l',
-        default_value = "3000",
-        env = "LISTEN_PORT"
-    )]
-    pub listen_port: u16,
+    #[clap(flatten)]
+    pub common: CommonOpts,
 
     #[clap(flatten)]
-    pub app_opts: GeneratorOpts,
+    pub custom: GeneratorOpts,
+}
+
+#[derive(Args, Debug, Clone)]
+pub struct CommonOpts {
+    test: bool,
 }
 
 impl<GeneratorOpts> Opts<GeneratorOpts>

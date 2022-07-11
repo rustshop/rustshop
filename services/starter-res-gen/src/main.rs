@@ -1,5 +1,5 @@
 use clap::Args;
-use common_res_gen::{GenResult, Resource};
+use common_res_gen::{GenContext, GenResult};
 
 #[derive(Args, Debug, Clone)]
 struct Opts;
@@ -9,8 +9,33 @@ struct Gen;
 impl common_res_gen::Generator for Gen {
     type Opts = Opts;
 
-    fn generate(&mut self, _opts: &common_res_gen::Opts<Self::Opts>) -> GenResult<Vec<Resource>> {
-        Ok(vec![])
+    fn generate(&mut self, ctx: &mut GenContext, _opts: &Self::Opts) -> GenResult<()> {
+        let app_name = "starter";
+        let mut selector = ctx.new_selector();
+
+        selector.insert("app", app_name);
+
+        ctx.service(app_name)
+            .label("somelabel", "some")
+            .port(
+                "http",
+                common_app::DEFAULT_LISTEN_PORT,
+                common_app::DEFAULT_LISTEN_PORT,
+            )
+            .selector(&selector)
+            .build_service()
+            .deployement(app_name)
+            .replicas(1)
+            .selector_match_labels(&selector);
+
+
+        ctx.service(
+            |s| s
+            .labels(labels)
+            .port("http", 3333, 333)
+            .selector(&selector)
+        )
+        Ok(())
     }
 }
 

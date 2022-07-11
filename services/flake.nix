@@ -107,7 +107,7 @@
         cargoArtifacts = workspaceDeps;
         pname = name;
 
-        src = filterModules ["common-res-gen" name] ./.;
+        src = filterModules ["common-res-gen" "common-app" name] ./.;
 
         cargoExtraArgs = "--bin ${name}";
       });

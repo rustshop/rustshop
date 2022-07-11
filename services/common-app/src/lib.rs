@@ -12,6 +12,9 @@ use crate::opts::Opts;
 
 mod opts;
 
+// make sure it matches `Opts`
+pub const DEFAULT_LISTEN_PORT: u16 = 3000;
+
 pub trait App {
     type Opts: clap::Args;
 

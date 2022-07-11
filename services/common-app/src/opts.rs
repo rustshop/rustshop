@@ -8,6 +8,9 @@ pub struct Opts<AppOpts>
 where
     AppOpts: FromArgMatches + Args,
 {
+    // TODO: something better than
+    // https://users.rust-lang.org/t/structopt-with-computed-default-value/57985/2?u=dpc
+    // ?
     #[clap(
         long = "listen",
         short = 'l',

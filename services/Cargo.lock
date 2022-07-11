@@ -419,8 +419,7 @@ checksum = "112c678d4050afce233f4f2852bb2eb519230b3cf12f33585275537d7e41578d"
 [[package]]
 name = "k8s-openapi"
 version = "0.15.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d2ae2c04fcee6b01b04e3aadd56bb418932c8e0a9d8a93f48bc68c6bdcdb559d"
+source = "git+https://github.com/dpc/k8s-openapi?branch=issue-80#8d9bafae67b193b4d0734092498acaf3701274d7"
 dependencies = [
  "base64",
  "bytes",
@@ -812,6 +811,7 @@ name = "starter-res-gen"
 version = "0.1.0"
 dependencies = [
  "clap",
+ "common-app",
  "common-res-gen",
  "error-stack",
  "tracing",
