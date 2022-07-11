@@ -2,8 +2,8 @@
 
 use derive_more::From;
 use error_stack::{IntoReport, Result, ResultExt};
-use k8s_openapi::api::apps::v1::Deployment;
 use std::{
+    borrow::Borrow,
     collections::{
         btree_map::Entry::{Occupied, Vacant},
         BTreeMap,
@@ -67,177 +67,53 @@ impl GenContext {
         }
     }
 
-    pub fn service<'ctx>(&'ctx mut self, name: &str) -> ServiceBuilder<'ctx> {
-        ServiceBuilder {
-            ctx: self,
-            service: k8s::Service {
-                metadata: k8s::ObjectMeta {
-                    name: Some(name.to_owned()),
-                    ..Default::default()
-                },
-                ..Default::default()
-            },
-            name: name.to_owned(),
-        }
-        .label("name", name)
+    pub fn add_service<'ctx>(
+        &'ctx mut self,
+        name: &str,
+        func: impl FnOnce(&mut k8s::Service),
+    ) -> &mut Self {
+        let mut service = k8s::Service::default();
+        service.metadata().name_set(name.to_owned());
+        service
+            .metadata()
+            .labels()
+            .insert("app".into(), name.to_owned());
+
+        func(&mut service);
+
+        self.resources.push(service.into());
+        self
     }
 
-    pub fn deployement<'ctx>(&'ctx mut self, name: &str) -> DeploymentBuilder<'ctx> {
-        DeploymentBuilder {
-            ctx: self,
-            deployment: k8s::Deployment {
-                metadata: k8s::ObjectMeta {
-                    name: Some(name.to_owned()),
-                    ..Default::default()
-                },
+    pub fn add_deployment<'ctx>(
+        &'ctx mut self,
+        name: &str,
+        func: impl FnOnce(&mut k8s::Deployment),
+    ) -> &mut Self {
+        let mut deployment = k8s::Deployment {
+            metadata: k8s::ObjectMeta {
+                name: Some(name.to_owned()),
                 ..Default::default()
             },
-            name: name.to_owned(),
-        }
-        .label("name", name)
+            ..Default::default()
+        };
+
+        func(&mut deployment);
+
+        self.resources.push(deployment.into());
+        self
     }
-    pub fn new_selector(&self) -> LabelSet {
+
+    pub fn new_labels(&self) -> LabelSet {
         LabelSet::default()
     }
 }
 
-pub struct ServiceBuilder<'ctx> {
-    ctx: &'ctx mut GenContext,
-    name: String,
-    service: k8s::Service,
-}
-
-impl<'ctx> ServiceBuilder<'ctx> {
-    pub fn label(mut self, name: &str, value: &str) -> Self {
-        match self
-            .service
-            .metadata
-            .labels
-            .get_or_insert_default()
-            .entry(name.to_owned())
-        {
-            Vacant(e) => {
-                e.insert(value.to_string());
-            }
-            Occupied(mut e) => {
-                warn!(
-                    label = name,
-                    old = e.get(),
-                    new = value,
-                    service = self.name;
-                    "Overwritting existing label"
-                );
-                e.insert(value.to_string());
-            }
-        };
-
-        self
-    }
-
-    pub fn port(mut self, name: &str, port: u16, target_port: u16) -> Self {
-        self.service
-            .spec
-            .get_or_insert_default()
-            .ports
-            .get_or_insert_default()
-            .push(k8s::ServicePort {
-                name: Some(name.to_owned()),
-                port: i32::from(port),
-                target_port: Some(k8s::IntOrString::Int(i32::from(target_port))),
-
-                ..Default::default()
-            });
-
-        self
-    }
-
-    pub fn selector(mut self, selector: &LabelSet) -> Self {
-        selector.copy_into(
-            self.service
-                .spec
-                .get_or_insert_default()
-                .selector
-                .get_or_insert_default(),
-        );
-
-        self
-    }
-    pub fn build_service(self) -> &'ctx mut GenContext {
-        self.ctx.resources.push(self.service.into());
-        self.ctx
-    }
-}
-
-pub struct DeploymentBuilder<'ctx> {
-    ctx: &'ctx mut GenContext,
-    name: String,
-    deployment: k8s::Deployment,
-}
-
-impl<'ctx> DeploymentBuilder<'ctx> {
-    pub fn replicas(mut self, replicas: i32) -> Self {
-        self.deployment.spec.get_or_insert_default().replicas = Some(replicas);
-        self
-    }
-
-    pub fn label(mut self, name: &str, value: &str) -> Self {
-        match self
-            .deployment
-            .metadata
-            .labels
-            .get_or_insert_default()
-            .entry(name.to_owned())
-        {
-            Vacant(e) => {
-                e.insert(value.to_string());
-            }
-            Occupied(mut e) => {
-                warn!(
-                    label = name,
-                    old = e.get(),
-                    new = value,
-                    service = self.name;
-                    "Overwritting existing label"
-                );
-                e.insert(value.to_string());
-            }
-        };
-
-        self
-    }
-
-    pub fn labels(&mut self, label_set: &LabelSet) {
-        label_set.copy_into(self.deployment.metadata.labels.get_or_insert_default());
-    }
-
-    pub fn selector_match_labels(mut self, selector: &LabelSet) -> Self {
-        selector.copy_into(
-            self.deployment
-                .spec
-                .get_or_insert_default()
-                .selector
-                .match_labels
-                .get_or_insert_default(),
-        );
-
-        self
-    }
-
-    pub fn template(&mut self) -> DeploymentTemplate {
-        DeploymentTemplate(&mut self.spec.template)
-    }
-
-    pub fn build_deployment(self) -> &'ctx mut GenContext {
-        self.ctx.resources.push(self.deployment.into());
-        self.ctx
-    }
-}
-
-#[derive(Default)]
+#[derive(Default, Clone, Debug)]
 pub struct LabelSet(BTreeMap<String, String>);
 
 impl LabelSet {
-    pub fn insert(&mut self, name: &str, value: &str) -> &mut Self {
+    pub fn insert(mut self, name: &str, value: &str) -> Self {
         match self.0.entry(name.to_owned()) {
             Vacant(e) => {
                 e.insert(value.to_string());
@@ -276,11 +152,33 @@ impl LabelSet {
     }
 }
 
+impl Borrow<BTreeMap<String, String>> for &LabelSet {
+    fn borrow(&self) -> &BTreeMap<String, String> {
+        &self.0
+    }
+}
 
-pub struct DeploymentBuilder<'ctx> {
-    ctx: &'ctx mut GenContext,
-    name: String,
-    deployment: k8s::Deployment,
+impl From<LabelSet> for Option<k8s::LabelSelector> {
+    fn from(set: LabelSet) -> Self {
+        Some(k8s::LabelSelector {
+            match_labels: Some(set.0),
+            ..Default::default()
+        })
+    }
+}
+
+impl From<LabelSet> for k8s::LabelSelector {
+    fn from(set: LabelSet) -> Self {
+        k8s::LabelSelector {
+            match_labels: Some(set.0),
+            ..Default::default()
+        }
+    }
+}
+impl From<LabelSet> for Option<BTreeMap<String, String>> {
+    fn from(set: LabelSet) -> Self {
+        Some(set.0)
+    }
 }
 
 #[derive(Error, Debug)]
