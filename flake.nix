@@ -24,8 +24,11 @@
           # external project would import `rustshop` as a flake,
           # but we cheat, at least for now
           rustshop = (import ./rustshop/default-system.nix) system;
+          services = (import ./services/default-system.nix) system;
+          servicesNativeBuildInputs = services.outputs.devShell."${system}".nativeBuildInputs;
         in pkgs.mkShell {
           buildInputs =
+            servicesNativeBuildInputs ++
             lib.attrsets.attrValues rustshop.packages."${system}" ++ [
               # extra binaries here
             ];
