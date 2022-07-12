@@ -8,6 +8,15 @@ pub struct Opts<AppOpts>
 where
     AppOpts: FromArgMatches + Args,
 {
+    #[clap(flatten)]
+    pub common_opts: CommonOpts,
+
+    #[clap(flatten)]
+    pub app_opts: AppOpts,
+}
+
+#[derive(Args, Debug, Clone)]
+pub struct CommonOpts {
     // TODO: something better than
     // https://users.rust-lang.org/t/structopt-with-computed-default-value/57985/2?u=dpc
     // ?
@@ -18,9 +27,6 @@ where
         env = "LISTEN_PORT"
     )]
     pub listen_port: u16,
-
-    #[clap(flatten)]
-    pub app_opts: AppOpts,
 }
 
 impl<AppOpts> Opts<AppOpts>

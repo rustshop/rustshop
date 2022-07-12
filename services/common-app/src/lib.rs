@@ -1,4 +1,5 @@
 use axum::Router;
+use clap::Args;
 use std::{io, net::SocketAddr};
 
 use error_stack::{IntoReport, Result, ResultExt};
@@ -15,15 +16,62 @@ mod opts;
 // make sure it matches `Opts`
 pub const DEFAULT_LISTEN_PORT: u16 = 3000;
 
-pub trait App {
-    type Opts: clap::Args;
+#[derive(Args, Debug, Clone)]
+pub struct NoOpts;
 
-    fn handle_args(&mut self, _opts: &Self::Opts) -> AppResult<()> {
-        Ok(())
+#[derive(Debug)]
+pub struct AppBuilder<O> {
+    common_opts: O,
+}
+
+impl AppBuilder<NoOpts> {
+    pub fn new() -> Self {
+        tracing_subscriber::registry()
+            .with(tracing_subscriber::EnvFilter::new(
+                std::env::var("RUST_LOG").unwrap_or_else(|_| "info".into()),
+            ))
+            .with(tracing_subscriber::fmt::layer().with_writer(io::stderr))
+            .init();
+
+        AppBuilder {
+            common_opts: NoOpts,
+        }
     }
 
-    fn pre_serve(&mut self, router: Router) -> AppResult<Router> {
-        Ok(router)
+    pub fn parse_opts<AppOpts>(self) -> (AppBuilder<opts::CommonOpts>, AppOpts)
+    where
+        AppOpts: clap::FromArgMatches + clap::Args,
+    {
+        let opts = Opts::from_args();
+        (
+            AppBuilder {
+                common_opts: opts.common_opts,
+            },
+            opts.app_opts,
+        )
+    }
+}
+
+impl AppBuilder<opts::CommonOpts> {
+    pub async fn run_axum(
+        &self,
+        func: impl FnOnce(axum::Router) -> AppResult<axum::Router>,
+    ) -> AppResult<()> {
+        let router = Router::new();
+
+        let router = func(router)?;
+
+        // run it
+        let addr = SocketAddr::from(([0, 0, 0, 0], self.common_opts.listen_port));
+        info!("listening on {}", addr);
+        axum::Server::bind(&addr)
+            .serve(router.into_make_service())
+            .with_graceful_shutdown(shutdown_signal())
+            .await
+            .report()
+            .change_context(AppError)?;
+
+        Ok(())
     }
 }
 
@@ -32,36 +80,6 @@ pub trait App {
 pub struct AppError;
 
 pub type AppResult<T> = Result<T, AppError>;
-
-pub async fn run_axum_app(mut app: impl App) -> AppResult<()> {
-    tracing_subscriber::registry()
-        .with(tracing_subscriber::EnvFilter::new(
-            std::env::var("RUST_LOG").unwrap_or_else(|_| "info".into()),
-        ))
-        .with(tracing_subscriber::fmt::layer().with_writer(io::stderr))
-        .init();
-
-    let opts = Opts::from_args();
-
-    app.handle_args(&opts.app_opts)?;
-
-    // build our application with a route
-    let router = Router::new();
-
-    let router = app.pre_serve(router)?;
-
-    // run it
-    let addr = SocketAddr::from(([0, 0, 0, 0], opts.listen_port));
-    info!("listening on {}", addr);
-    axum::Server::bind(&addr)
-        .serve(router.into_make_service())
-        .with_graceful_shutdown(shutdown_signal())
-        .await
-        .report()
-        .change_context(AppError)?;
-
-    Ok(())
-}
 
 async fn shutdown_signal() {
     let ctrl_c = async {
