@@ -811,7 +811,6 @@ name = "starter-res-gen"
 version = "0.1.0"
 dependencies = [
  "clap",
- "common-app",
  "common-res-gen",
  "error-stack",
  "tracing",

@@ -57,6 +57,7 @@ pub struct GenContext {
     #[allow(unused)]
     opts: opts::CommonOpts,
     resources: Vec<Resource>,
+    common_labels: LabelSet,
 }
 
 impl GenContext {
@@ -64,20 +65,22 @@ impl GenContext {
         Self {
             opts,
             resources: vec![],
+            common_labels: LabelSet::new().insert("shop", "rustshop").to_owned(),
         }
     }
 
-    pub fn add_service<'ctx>(
+    pub fn add_plain_service<'ctx>(
         &'ctx mut self,
         name: &str,
         func: impl FnOnce(&mut k8s::Service),
     ) -> &mut Self {
         let mut service = k8s::Service::default();
         service.metadata().name_set(name.to_owned());
-        service
-            .metadata()
-            .labels()
-            .insert("app".into(), name.to_owned());
+        service.metadata().labels_insert_from(&self.common_labels);
+        service.metadata().labels_with(|l| {
+            l.insert("template".into(), "plain".into());
+            l.insert("app".into(), name.to_owned());
+        });
 
         func(&mut service);
 
@@ -85,23 +88,80 @@ impl GenContext {
         self
     }
 
-    pub fn add_deployment<'ctx>(
+    pub fn add_standard_service<'ctx>(
+        &'ctx mut self,
+        name: &str,
+        pod_selector: &LabelSet,
+        func: impl FnOnce(&mut k8s::Service),
+    ) -> &mut Self {
+        self.add_plain_service(name, |s| {
+            s.metadata_with(|m| {
+                m.labels_insert_from(pod_selector);
+                m.labels().insert("template".into(), "standard".into());
+            })
+            .spec()
+            .ports_with(|ports| {
+                ports.push(k8s::ServicePort {
+                    name: "http".to_owned().into(),
+                    port: i32::from(3000),
+                    ..Default::default()
+                })
+            })
+            .selector_set(pod_selector.clone());
+            func(s);
+        })
+    }
+
+    pub fn add_plain_deployment<'ctx>(
         &'ctx mut self,
         name: &str,
         func: impl FnOnce(&mut k8s::Deployment),
     ) -> &mut Self {
-        let mut deployment = k8s::Deployment {
-            metadata: k8s::ObjectMeta {
-                name: Some(name.to_owned()),
-                ..Default::default()
-            },
-            ..Default::default()
-        };
+        let mut deployment = k8s::Deployment::default();
+
+        deployment.metadata().name_set(name.to_owned());
+        deployment
+            .metadata()
+            .labels_insert_from(&self.common_labels);
+        deployment.metadata().labels_with(|l| {
+            l.insert("template".into(), "plain".into());
+            l.insert("app".into(), name.to_owned());
+        });
 
         func(&mut deployment);
 
         self.resources.push(deployment.into());
         self
+    }
+
+    pub fn add_standard_deployment<'ctx>(
+        &'ctx mut self,
+        name: &str,
+        image: &str,
+        func: impl FnOnce(&mut k8s::Deployment),
+    ) -> LabelSet {
+        let pod_selector = self.new_labels().insert("app", name);
+
+        self.add_plain_deployment(name, |d| {
+            d.metadata_with(|m| {
+                m.labels_insert_from(&pod_selector);
+                m.labels().insert("template".into(), "standard".into());
+            })
+            .spec()
+            .replicas_set(1)
+            .selector_set(pod_selector.clone())
+            .template_with(|t| {
+                t.metadata().labels_insert_from(&pod_selector);
+                t.metadata().name_set(name.to_owned());
+                t.spec().containers_push_with(|c| {
+                    c.image_set(image.to_owned()).name_set("main");
+                });
+            });
+
+            func(d);
+        });
+
+        pod_selector
     }
 
     pub fn new_labels(&self) -> LabelSet {
@@ -113,6 +173,10 @@ impl GenContext {
 pub struct LabelSet(BTreeMap<String, String>);
 
 impl LabelSet {
+    pub fn new() -> Self {
+        Default::default()
+    }
+
     pub fn insert(mut self, name: &str, value: &str) -> Self {
         match self.0.entry(name.to_owned()) {
             Vacant(e) => {

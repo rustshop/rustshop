@@ -11,6 +11,5 @@ path = "src/main.rs"
 [dependencies]
 tracing = "0.1.35"
 common-res-gen = { version = "*", path = "../common-res-gen/" }
-common-app = { version = "*", path = "../common-app/" }
 clap = { version = "3.1.6", features = [ "derive", "env" ] }
 error-stack = "0.1.1"
