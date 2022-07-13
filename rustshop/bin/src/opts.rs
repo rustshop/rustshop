@@ -148,18 +148,26 @@ pub enum BootstrapCommands {
     },
     Cluster {
         /// Cluster name. Eg. `prod`. Default to current account name.
+        #[clap(long = "name")]
         name: Option<String>,
 
-        #[clap(name = "account")]
+        #[clap(long = "account")]
         account: Option<String>,
 
         /// Set to true *only* after cluster DNS is set up and working
         #[clap(long = "dns-ready")]
         dns_ready: bool,
 
+        /// Set to true *only* after cluster DNS is set up and working
+        #[clap(long = "create-hosted-zone")]
+        create_hosted_zone: bool,
+
         /// Bootstrap minimal, cheapest working cluster possible (1 node + 1 worker, smallest EBSs, spot instances)
-        #[clap(long = "dns-ready")]
+        #[clap(long = "minimal")]
         minimal: bool,
+
+        #[clap(allow_hyphen_values = true)]
+        other_args: Vec<OsString>,
     },
 }
 

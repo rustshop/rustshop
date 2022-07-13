@@ -333,7 +333,7 @@ impl Aws {
                 "create-hosted-zone",
                 "--name",
                 domain,
-                "--caller-reference-id",
+                "--caller-reference",
                 &caller_id,
             ],
             false,

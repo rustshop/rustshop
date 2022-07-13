@@ -1,4 +1,5 @@
 use std::{
+    ffi::OsString,
     fmt::Display,
     io::{self, Write},
     path::Path,
@@ -6,7 +7,7 @@ use std::{
     time::Duration,
 };
 
-use error_stack::{IntoReport, ResultExt};
+use error_stack::{bail, IntoReport, ResultExt};
 use rustshop_env::{AccountCfg, Env};
 use tempfile::NamedTempFile;
 use tracing::{info, trace, warn};
@@ -207,16 +208,18 @@ where
 pub fn bootstrap_cluster(
     account_name: Option<String>,
     cluster_name: Option<String>,
+    create_hosted_zone: bool,
     dns_ready: bool,
     minimal: bool,
+    other_args: &[OsString],
 ) -> AppResult<()> {
-    let mut env = Env::load().change_context(AppError)?;
+    let mut env = Env::load().change_context(AppError::Other)?;
 
     let account_name = if let Some(account_name) = account_name {
         account_name
     } else {
         env.get_context_account()
-            .change_context(AppError)?
+            .change_context(AppError::Other)?
             .account
             .expect("get_account_context took care of it")
             .0
@@ -227,19 +230,19 @@ pub fn bootstrap_cluster(
 
     let account_cfg: AccountCfg = env
         .get_account_ref(&account_name)
-        .change_context(AppError)?
+        .change_context(AppError::Other)?
         .into();
 
     let cluster_cfg = if let Some(cluster_cfg) = env
         .get_account_ref(&account_name)
-        .change_context(AppError)?
+        .change_context(AppError::Other)?
         .get_cluster_ref_opt(&cluster_name)
-        .change_context(AppError)?
+        .change_context(AppError::Other)?
     {
         cluster_cfg.shop.clone()
     } else {
         env.add_cluster(&account_name, &cluster_name)
-            .change_context(AppError)?
+            .change_context(AppError::Other)?
     };
 
     let aws = aws_api::Aws::new(
@@ -247,17 +250,19 @@ pub fn bootstrap_cluster(
         account_cfg.shop.bootstrap_aws_region.clone(),
     );
 
-    let zone = loop {
-        // by using the same caller id, we won't create the zone multiple times
-        let caller_id = Aws::random_caller_id();
+    // by using the same caller id, we won't create the zone multiple times
+    let caller_id = Aws::random_caller_id();
 
+    let zone = loop {
+        info!(name = cluster_cfg.domain, "Checking if hosted zone exists");
         if let Some(zone) = aws
             .list_hosted_zones()
-            .change_context(AppError)?
+            .change_context(AppError::Other)?
             .into_iter()
-            .filter(
-                |zone| zone.name == cluster_cfg.domain, /* kops cluster name is the cluster domain */
-            )
+            .filter(|zone| {
+                zone.name == cluster_cfg.domain /* kops cluster name is the cluster domain */
+                || zone.name == format!("{}.", cluster_cfg.domain)
+            } /* Note: FQDN suffixed with `.` */)
             .next()
         {
             info!(
@@ -265,17 +270,22 @@ pub fn bootstrap_cluster(
                 zone.name, zone.id
             );
             break zone;
+        } else if !create_hosted_zone {
+            Err(AppError::Other).report().attach_printable_lazy(|| {
+                "Existing zone not detected. Rerun wth `--create-hosted-zone` to create"
+            })?;
         } else {
             retry(|| {
                 info!("Creating zone name: {}", cluster_cfg.domain);
                 aws.create_hosted_zone(&cluster_cfg.domain, Some(caller_id.clone()))
-                    .change_context(AppError)
+                    .change_context(AppError::Other)
             })?
         }
     };
 
     if !dns_ready {
-        let zone_details = retry(|| aws.get_hosted_zone(&zone.id)).change_context(AppError)?;
+        let zone_details =
+            retry(|| aws.get_hosted_zone(&zone.id)).change_context(AppError::Other)?;
         info!(
             "Zone ready. Configure NS records for domain ({}) in root domain ({}) to point at: {:?}",
             cluster_cfg.domain,
@@ -291,12 +301,8 @@ pub fn bootstrap_cluster(
 
     let mut cmd = Command::new("kops");
 
-    // let account_cfg = env
-    //     .get_shop_account_ref(&account_name)
-    //     .change_context(AppError)?;
-
     super::wrap::set_kops_envs_on(&account_cfg.shop, &cluster_cfg, &mut cmd)
-        .change_context(AppError)?;
+        .change_context(AppError::Other)?;
 
     cmd.args(&[
         "create",
@@ -304,7 +310,7 @@ pub fn bootstrap_cluster(
         "--cloud",
         "aws",
         "--zones",
-        &format!("{}1", account_cfg.shop.bootstrap_aws_region),
+        &format!("{}a", account_cfg.shop.bootstrap_aws_region),
         &format!(
             "--discovery-store=s3://{}-bootstrap-kops-oidc-public/{}/discovery",
             account_cfg.shop.bootstrap_name, cluster_cfg.domain
@@ -328,11 +334,15 @@ pub fn bootstrap_cluster(
         ]);
     }
 
+    cmd.args(other_args);
+
     trace!("Run: {cmd:?}");
-    let status = cmd.output().report().change_context(AppError)?;
+    let status = cmd.output().report().change_context(AppError::Other)?;
 
     if !status.status.success() {
-        Err(AppError)?;
+        bail!(AppError::CommandFailed {
+            stderr: String::from_utf8_lossy(&status.stderr).to_string()
+        })
     }
 
     info!("Cluster created with `kops`. Use `kops cluster edit` to tune, and `kups update cluster --yes` to deploy");
