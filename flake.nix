@@ -170,11 +170,15 @@
               # Nix
               pkgs.nixpkgs-fmt
               pkgs.shellcheck
+
+              # Utils
+              pkgs.git
             ];
 
             RUST_SRC_PATH = "${fenix-channel.rust-src}/lib/rustlib/src/rust/library";
             shellHook = ''
               for hook in misc/git-hooks/* ; do ln -sf "../../$hook" "./.git/hooks/" ; done
+              ${pkgs.git}/bin/git config commit.template misc/git-hooks/commit-template.txt
               . ${rustshop.default}/usr/share/rustshop/shell-hook.sh
             '';
           };
