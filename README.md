@@ -6,7 +6,7 @@ to help quickly set up and manage a production grade cloud-based system.
 The core target audience are Rust developers that are familiar or willing to learn Nix and
 have some DevOps interest. However it might be useful for wide group of people:
 
-* `rustshop` project is a bit like a tutorial for setting up AWS/k8s stack.
+* `rustshop` project is a bit like a tutorial for setting up Nix&Rust shop building a AWS/k8s stack.
 * `rustshop` binary is well integrated tool to make working with 
   like `terraform`, `kubectl`, `kops`, `helm` and other utilities much more convenient
   (in particular when dealing with multiple accounts/profiles/clusters).
