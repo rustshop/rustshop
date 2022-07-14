@@ -25,10 +25,10 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v3
 
-    - name: Cache install Nix packages
-      uses: mtoohey31/cache-flake-attrs@v2
-      with:
-        key: ${{ runner.os }}-nix-${{ hashFiles('./flake.lock', './flake.nix') }}
+      - name: Cache install Nix packages
+        uses: mtoohey31/cache-flake-attrs@v2
+        with:
+          key: ${{ runner.os }}-nix-${{ hashFiles('./flake.lock', './flake.nix') }}
 
     - name: Calculate some things
       run: shopkeeper --help
