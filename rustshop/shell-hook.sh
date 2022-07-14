@@ -2,7 +2,9 @@
 #
 # Standard shell hook to initialize shop's shell to use `rustshop`
 
-export RUSTSHOP_ROOT="`pwd`"
+export RUSTSHOP_ROOT
+
+RUSTSHOP_ROOT=$(pwd)
 
 # execute shop-wide customization script
 if [ -e "$RUSTSHOP_ROOT/.rustshop/shop.shrc" ]; then
@@ -15,4 +17,4 @@ if [ -e "$RUSTSHOP_ROOT/.rustshop/user.shrc" ]; then
 fi
 
 # Completions
-eval "`rustshop --completions \`basename $SHELL\``"
+eval "$(rustshop --completions "$(basename "$SHELL")")"

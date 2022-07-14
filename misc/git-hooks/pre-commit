@@ -3,7 +3,8 @@
 set -e
 
 >&2 echo "Checking *.nix files..."
-nixpkgs-fmt --check $(git ls | egrep '*.nix')
+nixpkgs-fmt --check $(git ls | egrep '*.nix$')
+
 
 >&2 echo "Checking Rust projects files..."
 
@@ -12,4 +13,11 @@ for workspace in ./services ./rustshop/ ; do
     cd ./$workspace &&
      >&2 cargo fmt --check --all
   )
+done
+
+
+>&2 echo "Checking shell script files ..."
+
+for path in $(git ls | egrep '*.sh$')  ; do
+  shellcheck --severity=warning $path
 done

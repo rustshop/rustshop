@@ -169,6 +169,7 @@
 
               # Nix
               pkgs.nixpkgs-fmt
+              pkgs.shellcheck
             ];
 
             RUST_SRC_PATH = "${fenix-channel.rust-src}/lib/rustlib/src/rust/library";

@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # TODO: rewrite in Rust
 # export RELEASE_VERSION=`curl -sL https://api.github.com/repos/aws-controllers-k8s/$SERVICE-controller/releases/latest | grep '"tag_name":' | cut -d'"' -f4`
 # export RELEASE_VERSION="v0.1.3" # s3
