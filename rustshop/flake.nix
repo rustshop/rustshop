@@ -99,6 +99,9 @@
           fenix-channel.rustfmt
           fenix-channel.rustc
           fenix-channel.cargo
+
+          pkgs.rnix-lsp
+          pkgs.nodePackages.bash-language-server
         ];
         RUST_SRC_PATH = "${fenix-channel.rust-src}/lib/rustlib/src/rust/library";
       };

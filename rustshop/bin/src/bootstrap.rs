@@ -345,6 +345,6 @@ pub fn bootstrap_cluster(
         })
     }
 
-    info!("Cluster created with `kops`. Use `kops cluster edit` to tune, and `kups update cluster --yes` to deploy");
+    info!("Cluster created with `kops`. Use `kops edit cluster` to tune, and `kups update cluster --yes` to deploy");
     Ok(())
 }
