@@ -173,6 +173,7 @@
 
               # Utils
               pkgs.git
+              pkgs.gh
             ];
 
             RUST_SRC_PATH = "${fenix-channel.rust-src}/lib/rustlib/src/rust/library";
