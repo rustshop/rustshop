@@ -35,18 +35,18 @@
         };
         lib = nixpkgs.lib;
       in
-    {
-      packages = {};
+      {
+        packages = { };
 
-      devShells.default = pkgs.mkShell {
-        buildInputs =
-          lib.attrsets.attrValues rustshop.packages."${system}" ++ [
-            # extra binaries here
-          ];
+        devShells.default = pkgs.mkShell {
+          buildInputs =
+            lib.attrsets.attrValues rustshop.packages."${system}" ++ [
+              # extra binaries here
+            ];
 
-        shellHook = ''
-          . ${rustshop.packages."${system}".rustshop}/usr/share/rustshop/shell-hook.sh
-        '';
-      };
-    });
+          shellHook = ''
+            . ${rustshop.packages."${system}".rustshop}/usr/share/rustshop/shell-hook.sh
+          '';
+        };
+      });
 }

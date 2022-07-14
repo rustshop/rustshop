@@ -13,7 +13,7 @@
     };
 
     fenix = {
-        url = "github:nix-community/fenix";
+      url = "github:nix-community/fenix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -173,7 +173,7 @@
 
             RUST_SRC_PATH = "${fenix-channel.rust-src}/lib/rustlib/src/rust/library";
             shellHook = ''
-              ln -s ./misc/git-hooks/* ./.git/hooks/
+              for hook in misc/git-hooks/* ; do ln -sf "../../$hook" "./.git/hooks/" ; done
               . ${rustshop.default}/usr/share/rustshop/shell-hook.sh
             '';
           };

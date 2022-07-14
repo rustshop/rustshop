@@ -25,49 +25,50 @@
 
   outputs = { self, naersk, nixpkgs, flake-utils, flake-compat, fenix, crane }:
     flake-utils.lib.eachDefaultSystem (system:
-    let
-      pkgs = import nixpkgs {
-        inherit system;
-      };
-      fenix-pkgs = fenix.packages.${system};
-      fenix-channel = fenix-pkgs.complete;
+      let
+        pkgs = import nixpkgs {
+          inherit system;
+        };
+        fenix-pkgs = fenix.packages.${system};
+        fenix-channel = fenix-pkgs.complete;
 
-      craneLib = (crane.mkLib pkgs).overrideScope' (final: prev: {
-        cargo = fenix-channel.cargo;
-        rustc = fenix-channel.rustc;
+        craneLib = (crane.mkLib pkgs).overrideScope' (final: prev: {
+          cargo = fenix-channel.cargo;
+          rustc = fenix-channel.rustc;
+        });
+
+        commonArgs = {
+          src = ./.;
+          buildInputs = [
+          ];
+          nativeBuildInputs = [
+            pkgs.pkgconfig
+            fenix-channel.rustc
+          ];
+        };
+
+        cargoArtifacts = craneLib.buildDepsOnly (commonArgs // {
+          pname = "aws-bootstrap-deps";
+        });
+
+        aws-bootstrap = craneLib.buildPackage (commonArgs // {
+          pname = "aws-bootstrap";
+        });
+
+      in
+      {
+        aws-bootstrap = aws-bootstrap;
+        defaultPackage = aws-bootstrap;
+
+        devShell = pkgs.mkShell {
+          buildInputs = cargoArtifacts.buildInputs;
+          nativeBuildInputs = cargoArtifacts.nativeBuildInputs ++ [
+            fenix-pkgs.rust-analyzer
+            fenix-channel.rustfmt
+            fenix-channel.rustc
+            fenix-channel.cargo
+          ];
+          RUST_SRC_PATH = "${fenix-channel.rust-src}/lib/rustlib/src/rust/library";
+        };
       });
-
-      commonArgs = {
-        src = ./.;
-        buildInputs = [
-        ];
-        nativeBuildInputs = [
-          pkgs.pkgconfig
-          fenix-channel.rustc
-        ];
-      };
-
-      cargoArtifacts = craneLib.buildDepsOnly (commonArgs // {
-        pname = "aws-bootstrap-deps";
-      });
-
-      aws-bootstrap = craneLib.buildPackage (commonArgs // {
-        pname = "aws-bootstrap";
-      });
-
-    in {
-      aws-bootstrap = aws-bootstrap;
-      defaultPackage = aws-bootstrap;
-
-      devShell = pkgs.mkShell {
-        buildInputs = cargoArtifacts.buildInputs;
-        nativeBuildInputs = cargoArtifacts.nativeBuildInputs ++ [
-          fenix-pkgs.rust-analyzer
-          fenix-channel.rustfmt
-          fenix-channel.rustc
-          fenix-channel.cargo
-        ];
-        RUST_SRC_PATH = "${fenix-channel.rust-src}/lib/rustlib/src/rust/library";
-      };
-  });
 }

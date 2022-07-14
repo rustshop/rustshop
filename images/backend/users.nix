@@ -11,7 +11,7 @@ let
       description =
         "The Unix groups that Xeserv staff users should be assigned to";
     };
-    
+
     shell = mkOption {
       type = types.package;
       default = pkgs.bashInteractive;
@@ -20,25 +20,26 @@ let
         "The default shell that Xeserv staff users will be given by default.";
     };
   };
-  
+
   cfg = config.rustshop.users;
 
-  mkUser = {
-    keys,
-    shell ? cfg.shell,
-    extraGroups ? cfg.groups,
-    description ? "",
-    ...
-  }: {
-    isNormalUser = true;
-    inherit extraGroups shell description;
-    openssh.authorizedKeys = {
-      inherit keys;
+  mkUser =
+    { keys
+    , shell ? cfg.shell
+    , extraGroups ? cfg.groups
+    , description ? ""
+    , ...
+    }: {
+      isNormalUser = true;
+      inherit extraGroups shell description;
+      openssh.authorizedKeys = {
+        inherit keys;
+      };
     };
-  };
-in {
+in
+{
   options.rustshop.users = rustshop.users;
-  
+
   config.users.users = {
     dpc = mkUser {
       shell = pkgs.fish;
