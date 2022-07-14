@@ -30,6 +30,7 @@ jobs:
         with:
           key: ${{ runner.os }}-nix-${{ hashFiles('./flake.lock', './flake.nix') }}
           flake_paths: ".#app.shopkeeper .#app.starter"
+          
+      - name: Sanity check if it can run
+        run: nix --extra-experimental-features nix-command --extra-experimental-features flakes develop --ignore-environment --command shopkeeper --help
 
-      - name: Calculate some things
-        run: shopkeeper --help
