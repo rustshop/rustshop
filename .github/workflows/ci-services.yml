@@ -29,6 +29,7 @@ jobs:
         uses: mtoohey31/cache-flake-attrs@v2
         with:
           key: ${{ runner.os }}-nix-${{ hashFiles('./flake.lock', './flake.nix') }}
+          flake_paths: ".#app.shopkeeper .#app.starter"
 
       - name: Calculate some things
         run: shopkeeper --help
