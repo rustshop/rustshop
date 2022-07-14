@@ -1,0 +1,22 @@
+[package]
+name = "shopkeeper"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[[bin]]
+name = "shopkeeper"
+path = "src/main.rs"
+
+[dependencies]
+tracing = "0.1.35"
+common-app = { version = "*", path = "../common-app/" }
+clap = { version = "3.1.6", features = ["derive", "env"] }
+error-stack = "0.1.1"
+tokio = { version = "1.19.2", features = ["macros", "rt", "rt-multi-thread"] }
+axum = "0.5.11"
+tower-http = { version = "0.3.4", features = ["tracing", "trace"] }
+ring = { version = "0.16.20", features = [ "std" ] }
+thiserror = "1.0.31"
+hex = "0.4.3"
+serde_json = "1.0.82"

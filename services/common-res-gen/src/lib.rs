@@ -112,6 +112,33 @@ impl GenContext {
         })
     }
 
+    pub fn add_node_port_service<'ctx>(
+        &'ctx mut self,
+        name: &str,
+        port: u16,
+        pod_selector: &LabelSet,
+        func: impl FnOnce(&mut k8s::Service),
+    ) -> &mut Self {
+        self.add_plain_service(name, |s| {
+            s.metadata_with(|m| {
+                m.labels_insert_from(pod_selector);
+                m.labels().insert("template".into(), "standard".into());
+            })
+            .spec()
+            .type_set("NodePort".to_owned())
+            .ports_with(|ports| {
+                ports.push(k8s::ServicePort {
+                    name: "http".to_owned().into(),
+                    port: i32::from(3000),
+                    node_port: i32::from(port).into(),
+                    ..Default::default()
+                })
+            })
+            .selector_set(pod_selector.clone());
+            func(s);
+        })
+    }
+
     pub fn add_plain_deployment<'ctx>(
         &'ctx mut self,
         name: &str,

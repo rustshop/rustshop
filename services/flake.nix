@@ -114,10 +114,12 @@
 
       apps = {
         starter = serviceApp "starter";
+        shopkeeper = serviceApp "shopkeeper";
       };
 
       resGens = {
         starter = resGen "starter";
+        shopkeeper = resGen "shopkeeper";
       };
 
     in {
@@ -126,14 +128,17 @@
 
         app = {
           starter = apps.starter.package;
+          shopkeeper = apps.shopkeeper.package;
         };
 
         res = {
           starter = resGens.starter;
+          shopkeeper = resGens.shopkeeper;
         };
 
         docker = {
           starter = apps.starter.docker;
+          shopkeeper= apps.shopkeeper.docker;
         };
       };
 

@@ -28,6 +28,10 @@
           buildInputs =
             lib.attrsets.attrValues rustshop.packages."${system}" ++ [
               # extra binaries here
+              pkgs.terraform-ls
+
+              pkgs.rnix-lsp
+              pkgs.nodePackages.bash-language-server
             ];
 
           shellHook = ''

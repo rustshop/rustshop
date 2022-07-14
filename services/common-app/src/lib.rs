@@ -1,10 +1,7 @@
-use axum::Router;
 use clap::Args;
-use std::{io, net::SocketAddr};
+use std::io;
 
-use error_stack::{IntoReport, Result, ResultExt};
 use tokio::signal;
-use tracing::info;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 use thiserror::Error;
@@ -12,6 +9,9 @@ use thiserror::Error;
 use crate::opts::Opts;
 
 mod opts;
+
+pub mod axum;
+pub use self::axum::*;
 
 // make sure it matches `Opts`
 pub const DEFAULT_LISTEN_PORT: u16 = 3000;
@@ -50,28 +50,13 @@ impl AppBuilder<NoOpts> {
             opts.app_opts,
         )
     }
+
+    // NOTE: there's also `run_axum` in `mod axum`
 }
 
-impl AppBuilder<opts::CommonOpts> {
-    pub async fn run_axum(
-        &self,
-        func: impl FnOnce(axum::Router) -> AppResult<axum::Router>,
-    ) -> AppResult<()> {
-        let router = Router::new();
-
-        let router = func(router)?;
-
-        // run it
-        let addr = SocketAddr::from(([0, 0, 0, 0], self.common_opts.listen_port));
-        info!("listening on {}", addr);
-        axum::Server::bind(&addr)
-            .serve(router.into_make_service())
-            .with_graceful_shutdown(shutdown_signal())
-            .await
-            .report()
-            .change_context(AppError)?;
-
-        Ok(())
+impl Default for AppBuilder<NoOpts> {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -79,7 +64,7 @@ impl AppBuilder<opts::CommonOpts> {
 #[error("Application error")]
 pub struct AppError;
 
-pub type AppResult<T> = Result<T, AppError>;
+pub type AppResult<T> = error_stack::Result<T, AppError>;
 
 async fn shutdown_signal() {
     let ctrl_c = async {

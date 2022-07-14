@@ -4,4 +4,6 @@ members = [
 	"common-res-gen",
 	"starter",
 	"starter-res-gen",
+	"shopkeeper",
+	"shopkeeper-res-gen",
 ]
