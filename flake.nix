@@ -143,45 +143,60 @@
           };
         };
 
-        devShells.default =
-          let
-            # external project would import `rustshop` as a flake,
-            # but we cheat, at least for now; but it is an external
-            # components, and working on it requires `cd rustshop; nix develop`
-            # as it maintains it's own flake
-            rustshop = (import ./rustshop/default-system.nix) system;
-          in
-          pkgs.mkShell {
-            buildInputs = workspaceDeps.buildInputs;
-            nativeBuildInputs = workspaceDeps.nativeBuildInputs ++
-              lib.attrsets.attrValues rustshop.packages."${system}" ++ [
+        devShells = {
+          default =
+            let
+              # external project would import `rustshop` as a flake,
+              # but we cheat, at least for now; but it is an external
+              # components, and working on it requires `cd rustshop; nix develop`
+              # as it maintains it's own flake
+              rustshop = (import ./rustshop/default-system.nix) system;
+            in
+            pkgs.mkShell {
+              buildInputs = workspaceDeps.buildInputs;
+              nativeBuildInputs = workspaceDeps.nativeBuildInputs ++
+                lib.attrsets.attrValues rustshop.packages."${system}" ++ [
 
-              # extra binaries here
-              fenix-pkgs.rust-analyzer
-              fenix-channel.rustfmt
-              fenix-channel.rustc
-              fenix-channel.cargo
+                # extra binaries here
+                fenix-pkgs.rust-analyzer
+                fenix-channel.rustc
+                fenix-channel.cargo
 
-              # misc LSP
-              pkgs.terraform-ls
-              pkgs.rnix-lsp
-              pkgs.nodePackages.bash-language-server
+                # Lints
+                # Note: we're using nixpkgs's `rustfmt` to avoid pulling in whole
+                # `fenix-channel` into CI
+                pkgs.rustfmt
+                pkgs.terraform-ls
+                pkgs.rnix-lsp
+                pkgs.nodePackages.bash-language-server
 
-              # Nix
+                # Nix
+                pkgs.nixpkgs-fmt
+                pkgs.shellcheck
+
+                # Utils
+                pkgs.git
+                pkgs.gh
+              ];
+
+              RUST_SRC_PATH = "${fenix-channel.rust-src}/lib/rustlib/src/rust/library";
+              shellHook = ''
+                for hook in misc/git-hooks/* ; do ln -sf "../../$hook" "./.git/hooks/" ; done
+                ${pkgs.git}/bin/git config commit.template misc/git-hooks/commit-template.txt
+                . ${rustshop.default}/usr/share/rustshop/shell-hook.sh
+              '';
+            };
+
+          # this shell is used only in CI, so it should contain minimum amount
+          # of stuff to avoid building and caching things we don't need
+          ci = pkgs.mkShell {
+            nativeBuildInputs = [
+              pkgs.rustfmt
               pkgs.nixpkgs-fmt
               pkgs.shellcheck
-
-              # Utils
               pkgs.git
-              pkgs.gh
             ];
-
-            RUST_SRC_PATH = "${fenix-channel.rust-src}/lib/rustlib/src/rust/library";
-            shellHook = ''
-              for hook in misc/git-hooks/* ; do ln -sf "../../$hook" "./.git/hooks/" ; done
-              ${pkgs.git}/bin/git config commit.template misc/git-hooks/commit-template.txt
-              . ${rustshop.default}/usr/share/rustshop/shell-hook.sh
-            '';
           };
+        };
       });
 }
