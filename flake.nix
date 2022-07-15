@@ -74,7 +74,7 @@
           pname = "services-workspace-deps";
         });
 
-        # a function to define both package and docker build for a given service binary
+        # a function to define both package and container build for a given service binary
         serviceApp = name: rec {
           package = craneLib.buildPackage (commonArgs // {
             cargoArtifacts = workspaceDeps;
@@ -85,7 +85,7 @@
             cargoExtraArgs = "--bin ${name}";
           });
 
-          docker = pkgs.dockerTools.buildLayeredImage {
+          container = pkgs.dockerTools.buildLayeredImage {
             name = name;
             contents = [ package ];
             config = {
@@ -137,9 +137,9 @@
             shopkeeper = resGens.shopkeeper;
           };
 
-          docker = {
-            starter = apps.starter.docker;
-            shopkeeper = apps.shopkeeper.docker;
+          cont = {
+            starter = apps.starter.container;
+            shopkeeper = apps.shopkeeper.container;
           };
         };
 

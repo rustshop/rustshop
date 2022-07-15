@@ -35,7 +35,8 @@ jobs:
       - name: Commit check
         run: nix develop --ignore-environment --extra-experimental-features nix-command --extra-experimental-features flakes .#ci --command ./misc/git-hooks/pre-commit
 
-  build:
+
+  build-services:
     name: "Build Services"
     runs-on: ubuntu-latest
     steps:
@@ -45,8 +46,25 @@ jobs:
       - name: Cache install Nix packages
         uses: mtoohey31/cache-flake-attrs@v2
         with:
-          key: ${{ runner.os }}-nix-${{ hashFiles('./flake.lock', './flake.nix') }}-build
+          key: ${{ runner.os }}-nix-${{ hashFiles('./flake.lock', './flake.nix') }}-build-services
           flake_paths: ".#app.shopkeeper .#app.starter"
           
+      - name: Sanity check if it can run it
+        run: nix run --extra-experimental-features nix-command --extra-experimental-features flakes .#app.shopkeeper -- --help
+
+
+  build-containers:
+    name: "Build Containers"
+    runs-on: ubuntu-latest
+    steps:
+      # Checks-out repository under $GITHUB_WORKSPACE
+      - uses: actions/checkout@v3
+
+      - name: Cache install Nix packages
+        uses: mtoohey31/cache-flake-attrs@v2
+        with:
+          key: ${{ runner.os }}-nix-${{ hashFiles('./flake.lock', './flake.nix') }}-build-containers
+          flake_paths: ".#cont.shopkeeper .#cont.starter"
+
       - name: Sanity check if it can run it
         run: nix run --extra-experimental-features nix-command --extra-experimental-features flakes .#app.shopkeeper -- --help
