@@ -28,10 +28,21 @@ take care of everything for you.
 
 Clone this repository locally, with `git clone <repo-url>`, then `cd <repo-dir>`,
 
+
+## Use Nix Shell
+
 If your Nix is set up properly `nix develop` should just work (though it might take
 a while to download all the necessary files and build all the internal tooling). In
 the meantime you can read other documentation.
 
+Note: **using `nix develop` is virtually mandatory**. It takes care of setting up
+all the required developer automation, checks and ensures that all the developers and CI are 
+in sync: working with same set of tools (to the exact versions).
+
+You can still use your favorite IDE, unix shell (you can make `nix develop` to `exec zsh`
+etc. with `~/.rustshop/user.shrc`, and other personal utilities, but they MUST never
+be expected for other developers to use. In other words: if it's not automated and
+set up in `nix develop` shell, it doesn't exist.
 
 ## Account setup (TODO)
 
