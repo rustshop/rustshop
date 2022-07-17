@@ -1,7 +1,16 @@
 #![feature(option_get_or_insert_default)]
 
+use amplify::{bmap, s};
 use derive_more::From;
 use error_stack::{IntoReport, Result, ResultExt};
+use k8s_openapi::{
+    api::{
+        apps::v1::DeploymentSpec,
+        core::v1::{Container, PodSpec, PodTemplateSpec, ServiceSpec},
+    },
+    apimachinery::pkg::apis::meta::v1::ObjectMeta,
+    DeepMerge,
+};
 use std::{
     borrow::Borrow,
     collections::{
@@ -75,12 +84,18 @@ impl GenContext {
         func: impl FnOnce(&mut k8s::Service),
     ) -> &mut Self {
         let mut service = k8s::Service::default();
-        service.metadata().name_set(name.to_owned());
-        service.metadata().labels_insert_from(&self.common_labels);
-        service.metadata().labels_with(|l| {
-            l.insert("template".into(), "plain".into());
-            l.insert("app".into(), name.to_owned());
+        service.metadata.merge_from(ObjectMeta {
+            name: Some(name.into()),
+            labels: self.common_labels.to_owned().into(),
+            ..Default::default()
         });
+        service.metadata.labels.merge_from(
+            bmap! {
+                s!("template") => s!("plain"),
+                s!("app") => name.to_owned()
+            }
+            .into(),
+        );
 
         func(&mut service);
 
@@ -95,19 +110,23 @@ impl GenContext {
         func: impl FnOnce(&mut k8s::Service),
     ) -> &mut Self {
         self.add_plain_service(name, |s| {
-            s.metadata_with(|m| {
-                m.labels_insert_from(pod_selector);
-                m.labels().insert("template".into(), "standard".into());
-            })
-            .spec()
-            .ports_with(|ports| {
-                ports.push(k8s::ServicePort {
+            s.metadata.labels.merge_from(pod_selector.to_owned().into());
+            s.metadata.labels.merge_from(
+                bmap! {
+                    s!("template") => s!("standard")
+                }
+                .into(),
+            );
+            s.spec.get_or_insert_default().merge_from(ServiceSpec {
+                ports: vec![k8s::ServicePort {
                     name: "http".to_owned().into(),
                     port: i32::from(3000),
                     ..Default::default()
-                })
-            })
-            .selector_set(pod_selector.clone());
+                }]
+                .into(),
+                selector: pod_selector.to_owned().into(),
+                ..Default::default()
+            });
             func(s);
         })
     }
@@ -120,21 +139,24 @@ impl GenContext {
         func: impl FnOnce(&mut k8s::Service),
     ) -> &mut Self {
         self.add_plain_service(name, |s| {
-            s.metadata_with(|m| {
-                m.labels_insert_from(pod_selector);
-                m.labels().insert("template".into(), "standard".into());
-            })
-            .spec()
-            .type_set("NodePort".to_owned())
-            .ports_with(|ports| {
-                ports.push(k8s::ServicePort {
+            s.metadata.labels.merge_from(pod_selector.to_owned().into());
+            s.metadata.labels.merge_from(
+                bmap! {
+                    s!("template") => s!("standard")
+                }
+                .into(),
+            );
+            s.spec.get_or_insert_default().merge_from(ServiceSpec {
+                ports: vec![k8s::ServicePort {
                     name: "http".to_owned().into(),
                     port: i32::from(3000),
                     node_port: i32::from(port).into(),
                     ..Default::default()
-                })
-            })
-            .selector_set(pod_selector.clone());
+                }]
+                .into(),
+                selector: pod_selector.to_owned().into(),
+                ..Default::default()
+            });
             func(s);
         })
     }
@@ -146,14 +168,18 @@ impl GenContext {
     ) -> &mut Self {
         let mut deployment = k8s::Deployment::default();
 
-        deployment.metadata().name_set(name.to_owned());
-        deployment
-            .metadata()
-            .labels_insert_from(&self.common_labels);
-        deployment.metadata().labels_with(|l| {
-            l.insert("template".into(), "plain".into());
-            l.insert("app".into(), name.to_owned());
+        deployment.metadata.merge_from(ObjectMeta {
+            name: Some(name.into()),
+            labels: self.common_labels.to_owned().into(),
+            ..Default::default()
         });
+        deployment.metadata.labels.merge_from(
+            bmap! {
+                s!("template") => s!("plain"),
+                s!("app") => name.to_owned()
+            }
+            .into(),
+        );
 
         func(&mut deployment);
 
@@ -170,21 +196,36 @@ impl GenContext {
         let pod_selector = self.new_labels().insert("app", name);
 
         self.add_plain_deployment(name, |d| {
-            d.metadata_with(|m| {
-                m.labels_insert_from(&pod_selector);
-                m.labels().insert("template".into(), "standard".into());
-            })
-            .spec()
-            .replicas_set(1)
-            .selector_set(pod_selector.clone())
-            .template_with(|t| {
-                t.metadata().labels_insert_from(&pod_selector);
-                t.metadata().name_set(name.to_owned());
-                t.spec().containers_push_with(|c| {
-                    c.image_set(image.to_owned()).name_set("main");
-                });
+            d.metadata.labels.merge_from(pod_selector.to_owned().into());
+            d.metadata.labels.merge_from(
+                bmap! {
+                    s!("template") => s!("standard")
+                }
+                .into(),
+            );
+            d.spec.get_or_insert_default().merge_from(DeploymentSpec {
+                replicas: Some(1),
+                selector: pod_selector.to_owned().into(),
+                template: PodTemplateSpec {
+                    metadata: ObjectMeta {
+                        labels: pod_selector.to_owned().into(),
+                        name: name.to_owned().into(),
+                        ..Default::default()
+                    }
+                    .into(),
+                    spec: PodSpec {
+                        containers: vec![Container {
+                            image: image.to_owned().into(),
+                            name: "main".to_owned(),
+                            ..Default::default()
+                        }],
+                        ..Default::default()
+                    }
+                    .into(),
+                    ..Default::default()
+                },
+                ..Default::default()
             });
-
             func(d);
         });
 
