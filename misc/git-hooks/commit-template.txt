@@ -1,2 +1,2 @@
 
-# Limit the subject line to no more than 72 characters: end here -->   |
+# Explain *why* this change is being made                width limit ->|
