@@ -177,6 +177,7 @@
                 # Utils
                 pkgs.git
                 pkgs.gh
+                pkgs.cargo-udeps
               ];
 
               RUST_SRC_PATH = "${fenix-channel.rust-src}/lib/rustlib/src/rust/library";
