@@ -74,7 +74,7 @@
           pname = "services-workspace-deps";
         });
 
-        workspaceTests = craneLib.cargoBuild (commonArgs // {
+        workspaceAll = craneLib.cargoBuild (commonArgs // {
           cargoArtifacts = workspaceDeps;
           doCheck = true;
         });
@@ -148,7 +148,7 @@
           };
 
           deps = workspaceDeps;
-          test = workspaceTests;
+          ci = workspaceAll;
         };
 
         devShells = {

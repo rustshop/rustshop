@@ -28,17 +28,16 @@ jobs:
       - name: Cache install Nix packages
         uses: mtoohey31/cache-flake-attrs@v2
         with:
-          key: ${{ runner.os }}-nix-${{ hashFiles('./flake.lock', './flake.nix') }}-lint
+          key: ${{ runner.os }}-nix-${{ hashFiles('./flake.lock', './flake.nix') }}-lint-shell
           flake_paths: ".#devShells.x86_64-linux.lint"
 
       # run the same check that git `pre-commit` hook would, just in case
       - name: Commit check
         run: nix develop --ignore-environment --extra-experimental-features nix-command --extra-experimental-features flakes .#lint --command ./misc/git-hooks/pre-commit
 
-  test:
-    name: "Test"
+  build-services:
+    name: "Services"
     runs-on: ubuntu-latest
-
     steps:
       # Checks-out repository under $GITHUB_WORKSPACE
       - uses: actions/checkout@v3
@@ -46,31 +45,14 @@ jobs:
       - name: Cache install Nix packages
         uses: mtoohey31/cache-flake-attrs@v2
         with:
-          key: ${{ runner.os }}-nix-${{ hashFiles('./flake.lock', './flake.nix') }}-test
+          key: ${{ runner.os }}-nix-${{ hashFiles('./flake.lock', './flake.nix', './services/Cargo.lock') }}-deps
           flake_paths: ".#deps"
 
       - name: Run test
-        run: nix build -L --extra-experimental-features nix-command --extra-experimental-features flakes .#test
-
-  build-services:
-    name: "Build Services"
-    runs-on: ubuntu-latest
-    steps:
-      # Checks-out repository under $GITHUB_WORKSPACE
-      - uses: actions/checkout@v3
-
-      - name: Cache install Nix packages
-        uses: mtoohey31/cache-flake-attrs@v2
-        with:
-          key: ${{ runner.os }}-nix-${{ hashFiles('./flake.lock', './flake.nix') }}-build-services
-          flake_paths: ".#deps"
-          
-      - name: Sanity check if it can run it
-        run: nix run --extra-experimental-features nix-command --extra-experimental-features flakes .#app.shopkeeper -- --help
-
+        run: nix build -L --extra-experimental-features nix-command --extra-experimental-features flakes .#ci
 
   build-containers:
-    name: "Build Containers"
+    name: "Containers"
     runs-on: ubuntu-latest
     steps:
       # Checks-out repository under $GITHUB_WORKSPACE
