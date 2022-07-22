@@ -1,6 +1,6 @@
 # This is a basic workflow to help you get started with Actions
 
-name: "CI Checks"
+name: "CI"
 
 # Controls when the workflow will run
 on:
@@ -16,8 +16,8 @@ on:
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   # This workflow contains a single job called "build"
-  lints:
-    name: "Check Lints"
+  lint:
+    name: "Lint"
     runs-on: ubuntu-latest
 
     steps:
@@ -28,13 +28,29 @@ jobs:
       - name: Cache install Nix packages
         uses: mtoohey31/cache-flake-attrs@v2
         with:
-          key: ${{ runner.os }}-nix-${{ hashFiles('./flake.lock', './flake.nix') }}-ci
-          flake_paths: ".#devShells.x86_64-linux.ci"
+          key: ${{ runner.os }}-nix-${{ hashFiles('./flake.lock', './flake.nix') }}-lint
+          flake_paths: ".#devShells.x86_64-linux.lint"
 
       # run the same check that git `pre-commit` hook would, just in case
       - name: Commit check
-        run: nix develop --ignore-environment --extra-experimental-features nix-command --extra-experimental-features flakes .#ci --command ./misc/git-hooks/pre-commit
+        run: nix develop --ignore-environment --extra-experimental-features nix-command --extra-experimental-features flakes .#lint --command ./misc/git-hooks/pre-commit
 
+  test:
+    name: "Test"
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checks-out repository under $GITHUB_WORKSPACE
+      - uses: actions/checkout@v3
+
+      - name: Cache install Nix packages
+        uses: mtoohey31/cache-flake-attrs@v2
+        with:
+          key: ${{ runner.os }}-nix-${{ hashFiles('./flake.lock', './flake.nix') }}-test
+          flake_paths: ".#deps"
+
+      - name: Run test
+        run: nix build -L --extra-experimental-features nix-command --extra-experimental-features flakes .#test
 
   build-services:
     name: "Build Services"
@@ -65,6 +81,3 @@ jobs:
         with:
           key: ${{ runner.os }}-nix-${{ hashFiles('./flake.lock', './flake.nix') }}-build-containers
           flake_paths: ".#cont.shopkeeper .#cont.starter"
-
-      - name: Sanity check if it can run it
-        run: nix run --extra-experimental-features nix-command --extra-experimental-features flakes .#app.shopkeeper -- --help

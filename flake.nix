@@ -74,6 +74,11 @@
           pname = "services-workspace-deps";
         });
 
+        workspaceTests = craneLib.cargoBuild (commonArgs // {
+          cargoArtifacts = workspaceDeps;
+          doCheck = true;
+        });
+
         # a function to define both package and container build for a given service binary
         serviceApp = name: rec {
           package = craneLib.buildPackage (commonArgs // {
@@ -141,6 +146,9 @@
             starter = apps.starter.container;
             shopkeeper = apps.shopkeeper.container;
           };
+
+          deps = workspaceDeps;
+          test = workspaceTests;
         };
 
         devShells = {
@@ -190,7 +198,7 @@
 
           # this shell is used only in CI, so it should contain minimum amount
           # of stuff to avoid building and caching things we don't need
-          ci = pkgs.mkShell {
+          lint = pkgs.mkShell {
             nativeBuildInputs = [
               pkgs.rustfmt
               pkgs.nixpkgs-fmt
