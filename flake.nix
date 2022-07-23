@@ -4,7 +4,7 @@
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs";
     flake-utils.url = "github:numtide/flake-utils";
-    crane.url = "github:ipetkov/crane";
+    crane.url = "github:ipetkov/crane?ref=v0.5.1";
     crane.inputs.nixpkgs.follows = "nixpkgs";
 
     flake-compat = {
