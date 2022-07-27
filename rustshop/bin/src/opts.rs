@@ -222,7 +222,7 @@ pub enum SwitchCommands {
     Cluster {
         name: String,
     },
-    #[clap(alias = "ns")]
+    #[clap(alias = "n", alias = "ns")]
     Namespace {
         name: String,
     },

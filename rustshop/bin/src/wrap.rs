@@ -112,6 +112,14 @@ pub fn exec_wrapped_bin(bin: OsString, args: Vec<OsString>) -> WrapResult<()> {
         n @ Some("kubectl") | n @ Some("helm") => {
             let cfg = env.get_context().change_context(WrapError::EnvFailure)?;
 
+            if is_kubectl_switch(&bin_base_name, &args) {
+                let mut new_cmd = std::process::Command::new("rustshop");
+                new_cmd.args(&args);
+                return Err(new_cmd.exec())
+                    .report()
+                    .change_context(WrapError::ExecFailed)?;
+            }
+
             if let Some(cluster) = cfg.cluster {
                 trace!("Adding `--context` to `kubectl`");
                 cmd.args(&[
@@ -154,6 +162,21 @@ fn is_terraform_init(base_bin: &OsStr, args: &[OsString]) -> bool {
             .next()
             .and_then(|arg| arg.to_str().map(ToString::to_string))
             == Some("init".to_string())
+}
+
+fn is_kubectl_switch(base_bin: &OsStr, args: &[OsString]) -> bool {
+    base_bin.to_str() == Some("kubectl")
+        && args
+            .iter()
+            .filter(|arg| {
+                !arg.to_str()
+                    .map(|arg| arg.starts_with('-'))
+                    .unwrap_or(false)
+            })
+            .next()
+            .and_then(|arg| arg.to_str().map(ToString::to_string))
+            .map(|arg| args.len() <= "switch".len() && arg[..] == "switch"[..arg.len()])
+            .unwrap_or(false)
 }
 
 /// Set the variables that `aws` CLI command expects (and other binaries too)
