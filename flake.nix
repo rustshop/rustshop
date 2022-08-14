@@ -17,36 +17,28 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    naersk = {
-      url = "github:nix-community/naersk";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
   };
 
-  outputs = { self, naersk, nixpkgs, flake-utils, flake-compat, fenix, crane }:
+  outputs = { self, nixpkgs, flake-utils, flake-compat, fenix, crane }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs {
           inherit system;
         };
         lib = pkgs.lib;
-        fenix-pkgs = fenix.packages.${system};
-        fenix-channel = fenix-pkgs.complete;
 
-        craneLib = (crane.mkLib pkgs).overrideScope' (final: prev: {
-          cargo = fenix-channel.cargo;
-          rustc = fenix-channel.rustc;
-        });
+        fenix-toolchain = (fenix.packages.${system}.complete.withComponents [
+          "rustc"
+          "cargo"
+          "clippy"
+          "rust-analysis"
+          "rust-src"
+          "rustfmt"
+        ]);
 
-        commonArgs = {
-          src = ./services;
-          buildInputs = [
-          ];
-          nativeBuildInputs = [
-            pkgs.pkgconfig
-            fenix-channel.rustc
-          ];
-        };
+        fenix-channel = fenix.packages.${system}.complete;
+
+        craneLib = crane.lib.${system}.overrideToolchain fenix-toolchain;
 
         # filter source code at path `src` to include only the list of `modules`
         filterModules = modules: src:
@@ -70,13 +62,72 @@
             inherit src;
           };
 
+        # Filter only files needed to build project dependencies
+        #
+        # To get good build times it's vitally important to not have to
+        # rebuild derivation needlessly. The way Nix caches things
+        # is very simple: if any input file changed, derivation needs to
+        # be rebuild.
+        #
+        # For this reason this filter function strips the `src` from
+        # any files that are not relevant to the build.
+        #
+        # Lile `filterWorkspaceFiles` but doesn't even need *.rs files
+        # (because they are not used for building dependencies)
+        filterWorkspaceDepsBuildFiles = src: filterSrcWithRegexes [ "Cargo.lock" "Cargo.toml" ".*/Cargo.toml" ] src;
+
+        # Filter only files relevant to building the workspace
+        filterWorkspaceFiles = src: filterSrcWithRegexes [ "Cargo.lock" "Cargo.toml" ".*/Cargo.toml" ".*\.rs" ] src;
+
+        filterSrcWithRegexes = regexes: src:
+          let
+            basePath = toString src + "/";
+          in
+          lib.cleanSourceWith {
+            filter = (path: type:
+              let
+                relPath = lib.removePrefix basePath (toString path);
+                includePath =
+                  (type == "directory") ||
+                  lib.any
+                    (re: builtins.match re relPath != null)
+                    regexes;
+              in
+              # uncomment to debug:
+                # builtins.trace "${relPath}: ${lib.boolToString includePath}"
+              includePath
+            );
+            inherit src;
+          };
+
+        commonArgs = {
+          src = filterWorkspaceFiles ./services;
+          buildInputs = [
+          ];
+          nativeBuildInputs = [
+            pkgs.pkgconfig
+            fenix-channel.rustc
+          ];
+        };
+
         workspaceDeps = craneLib.buildDepsOnly (commonArgs // {
+          src = filterWorkspaceDepsBuildFiles ./services;
           pname = "services-workspace-deps";
+          doCheck = false;
         });
 
-        workspaceAll = craneLib.cargoBuild (commonArgs // {
+        workspaceBuild = craneLib.cargoBuild (commonArgs // {
           cargoArtifacts = workspaceDeps;
+          doCheck = false;
+        });
+
+        workspaceTest = craneLib.cargoBuild (commonArgs // {
+          cargoArtifacts = workspaceBuild;
           doCheck = true;
+        });
+
+        workspaceClippy = craneLib.cargoClippy (commonArgs // {
+          cargoArtifacts = workspaceBuild;
         });
 
         # a function to define both package and container build for a given service binary
@@ -147,8 +198,7 @@
             shopkeeper = apps.shopkeeper.container;
           };
 
-          deps = workspaceDeps;
-          ci = workspaceAll;
+          inherit workspaceDeps workspaceBuild workspaceTest workspaceClippy;
         };
 
         devShells = {
@@ -166,9 +216,7 @@
                 lib.attrsets.attrValues rustshop.packages."${system}" ++ [
 
                 # extra binaries here
-                fenix-pkgs.rust-analyzer
-                fenix-channel.rustc
-                fenix-channel.cargo
+                fenix-toolchain
 
                 # Lints
                 # Note: we're using nixpkgs's `rustfmt` to avoid pulling in whole

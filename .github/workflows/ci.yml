@@ -21,45 +21,57 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Checks-out repository under $GITHUB_WORKSPACE
       - uses: actions/checkout@v3
-
-      # Cache the CI devShell build
-      - name: Cache install Nix packages
-        uses: mtoohey31/cache-flake-attrs@v2
+      - uses: cachix/install-nix-action@v15
         with:
-          key: ${{ runner.os }}-nix-${{ hashFiles('./flake.lock', './flake.nix') }}-lint-shell
-          flake_paths: ".#devShells.x86_64-linux.lint"
+          nix_path: nixpkgs=channel:nixos-22.05
+      - uses: cachix/cachix-action@v10
+        with:
+          name: rustshop-rustshop
+          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
 
       # run the same check that git `pre-commit` hook would, just in case
       - name: Commit check
         run: nix develop --ignore-environment --extra-experimental-features nix-command --extra-experimental-features flakes .#lint --command ./misc/git-hooks/pre-commit
 
-  build-services:
-    name: "Services"
+  build:
+    name: "Build"
     runs-on: ubuntu-latest
+
     steps:
-      # Checks-out repository under $GITHUB_WORKSPACE
       - uses: actions/checkout@v3
-
-      - name: Cache install Nix packages
-        uses: mtoohey31/cache-flake-attrs@v2
+      - uses: cachix/install-nix-action@v15
         with:
-          key: ${{ runner.os }}-nix-${{ hashFiles('./flake.lock', './flake.nix', './services/Cargo.lock') }}-deps
-          flake_paths: ".#deps"
+          nix_path: nixpkgs=channel:nixos-22.05
+      - uses: cachix/cachix-action@v10
+        with:
+          name: rustshop-rustshop
+          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
 
-      - name: Run test
-        run: nix build -L --extra-experimental-features nix-command --extra-experimental-features flakes .#ci
+      - name: Build workspace
+        run: nix build -L --extra-experimental-features nix-command --extra-experimental-features flakes .#workspaceBuild
+
+      - name: Clippy workspace
+        run: nix build -L --extra-experimental-features nix-command --extra-experimental-features flakes .#workspaceClippy
+
+      - name: Test workspace
+        run: nix build -L --extra-experimental-features nix-command --extra-experimental-features flakes .#workspaceTest
 
   build-containers:
     name: "Containers"
     runs-on: ubuntu-latest
     steps:
-      # Checks-out repository under $GITHUB_WORKSPACE
       - uses: actions/checkout@v3
-
-      - name: Cache install Nix packages
-        uses: mtoohey31/cache-flake-attrs@v2
+      - uses: cachix/install-nix-action@v15
         with:
-          key: ${{ runner.os }}-nix-${{ hashFiles('./flake.lock', './flake.nix') }}-build-containers
-          flake_paths: ".#cont.shopkeeper .#cont.starter"
+          nix_path: nixpkgs=channel:nixos-22.05
+      - uses: cachix/cachix-action@v10
+        with:
+          name: rustshop-rustshop
+          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+
+      - name: Build shopkeeper
+        run: nix build -L --extra-experimental-features nix-command --extra-experimental-features flakes .#cont.shopkeeper
+
+      - name: Build starter
+        run: nix build -L --extra-experimental-features nix-command --extra-experimental-features flakes .#cont.starter
