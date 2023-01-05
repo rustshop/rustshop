@@ -59,23 +59,6 @@ pub fn exec_wrapped_bin(bin: OsString, args: Vec<OsString>) -> WrapResult<()> {
         .expect("account set checked in get_context_account")
         .1;
 
-    if is_terraform_init(&bin_base_name, &args) {
-        info!("Executing with `terraform init` workaround");
-
-        cmd.args(&[
-            &format!(
-                "-backend-config=bucket={}-bootstrap-terraform-state",
-                account_cfg.shop.bootstrap_name
-            ),
-            &format!("-backend-config=key={}.tfstate", account_cfg.shop.bootstrap_name),
-            &format!(
-                "-backend-config=dynamodb_table={}-bootstrap-terraform",
-                account_cfg.shop.bootstrap_name
-            ),
-            &format!("-backend-config=profile={}", account_cfg.user.aws_profile),
-            &format!("-backend-config=region={}", account_cfg.shop.bootstrap_aws_region),
-        ]);
-    }
 
     trace!("Setting `aws` cli envs");
     set_aws_envs_on(account_cfg, &mut cmd);
@@ -136,6 +119,24 @@ pub fn exec_wrapped_bin(bin: OsString, args: Vec<OsString>) -> WrapResult<()> {
     }
 
     cmd.args(&args);
+
+    if is_terraform_init(&bin_base_name, &args) {
+        info!("Executing with `terraform init` workaround");
+
+        cmd.args(&[
+            &format!(
+                "-backend-config=bucket={}-bootstrap-terraform-state",
+                account_cfg.shop.bootstrap_name
+            ),
+            &format!("-backend-config=key={}.tfstate", account_cfg.shop.bootstrap_name),
+            &format!(
+                "-backend-config=dynamodb_table={}-bootstrap-terraform",
+                account_cfg.shop.bootstrap_name
+            ),
+            &format!("-backend-config=profile={}", account_cfg.user.aws_profile),
+            &format!("-backend-config=region={}", account_cfg.shop.bootstrap_aws_region),
+        ]);
+    }
 
     trace!("Exec: {cmd:?}");
     Err(cmd.exec())
