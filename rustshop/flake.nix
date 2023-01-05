@@ -24,6 +24,8 @@
         pkgs = import nixpkgs {
           inherit system;
         };
+        lib = pkgs.lib;
+        stdenv = pkgs.stdenv;
         fenix-pkgs = fenix.packages.${system};
         fenix-channel = fenix-pkgs.complete;
 
@@ -35,6 +37,9 @@
         commonArgs = {
           src = ./.;
           buildInputs = [
+          ] ++ lib.optionals stdenv.isDarwin [
+            pkgs.libiconv
+            pkgs.darwin.apple_sdk.frameworks.Security
           ];
           nativeBuildInputs = [
             pkgs.pkgconfig
