@@ -44,7 +44,7 @@ pub fn exec_wrapped_bin(bin: OsString, args: Vec<OsString>) -> WrapResult<()> {
         );
         trace!("Exec: {cmd:?}");
         Err(cmd.args(&args).exec())
-            .report()
+            .into_report()
             .change_context(WrapError::ExecFailed)?;
     }
 
@@ -116,7 +116,7 @@ pub fn exec_wrapped_bin(bin: OsString, args: Vec<OsString>) -> WrapResult<()> {
                 let mut new_cmd = std::process::Command::new("rustshop");
                 new_cmd.args(&args);
                 return Err(new_cmd.exec())
-                    .report()
+                    .into_report()
                     .change_context(WrapError::ExecFailed)?;
             }
 
@@ -144,7 +144,7 @@ pub fn exec_wrapped_bin(bin: OsString, args: Vec<OsString>) -> WrapResult<()> {
 
     trace!("Exec: {cmd:?}");
     Err(cmd.exec())
-        .report()
+        .into_report()
         .change_context(WrapError::ExecFailed)?;
 
     Ok(())

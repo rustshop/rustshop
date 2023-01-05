@@ -25,13 +25,13 @@ where
     T: ::serde::Serialize,
 {
     std::fs::create_dir_all(path.parent().ok_or(CfgFileIOError::RootPath)?)
-        .report()
+        .into_report()
         .change_context(CfgFileIOError::Io)?;
     let text = serde_yaml::to_string(t)
-        .report()
+        .into_report()
         .change_context(CfgFileIOError::Serde)?;
     store_str_to_file(path, &text)
-        .report()
+        .into_report()
         .change_context(CfgFileIOError::Io)?;
     Ok(())
 }
@@ -42,11 +42,11 @@ where
     T: ::serde::de::DeserializeOwned,
 {
     let text = std::fs::read_to_string(path)
-        .report()
+        .into_report()
         .change_context(CfgFileIOError::Io)?;
 
     Ok(serde_yaml::from_str(&text)
-        .report()
+        .into_report()
         .change_context(CfgFileIOError::Serde)?)
 }
 

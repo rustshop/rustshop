@@ -107,7 +107,7 @@ fn main_inner() -> AppResult<()> {
                 if let Some(shop_cfg) = env.load_shop_cfg_opt().change_context(AppError::Other)? {
                     if (ShopCfg { domain, name }) != shop_cfg {
                         Err(AppError::Other)
-                            .report()
+                            .into_report()
                             .attach_printable_lazy(|| format!("Previous settings: {shop_cfg:?}"))?;
                     }
                 } else {
@@ -165,7 +165,7 @@ fn main_inner() -> AppResult<()> {
 
             let context = env.get_context().change_context(AppError::Other)?;
             env.write_ctx_info_to(context, &mut std::io::stderr())
-                .report()
+                .into_report()
                 .change_context(AppError::Other)?;
         }
         Commands::Configure(cmd) => {
@@ -186,7 +186,7 @@ fn main_inner() -> AppResult<()> {
                 let env = Env::load().change_context(AppError::Other)?;
                 let context = env.get_context().change_context(AppError::Other)?;
                 env.write_ctx_info_to(context, &mut std::io::stdout())
-                    .report()
+                    .into_report()
                     .change_context(AppError::Other)?;
             }
             GetCommands::Account { profile } => {
@@ -238,13 +238,13 @@ fn bootstrap_account(
         .change_context(AppError::Other)?
     {
         if existing_account.shop.bootstrap_aws_region != aws_region {
-            Err(AppError::Other).report().attach_printable_lazy(|| {
+            Err(AppError::Other).into_report().attach_printable_lazy(|| {
                 format!("Region is different from the previously used one")
             })?;
         }
 
         if existing_account.shop.bootstrap_name != bootstrap_name {
-            Err(AppError::Other).report().attach_printable_lazy(|| {
+            Err(AppError::Other).into_report().attach_printable_lazy(|| {
                 format!("Account full name is different from the previously used one")
             })?;
         }

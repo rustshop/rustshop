@@ -306,7 +306,7 @@ impl Env {
             .ok_or(EnvError::AccountNotConfigured {
                 name: name.to_owned(),
             })
-            .report()
+            .into_report()
     }
 
     pub fn get_shop_account_ref_opt<'env, 'name>(
@@ -324,7 +324,7 @@ impl Env {
             .ok_or(EnvError::AccountNotConfigured {
                 name: name.to_owned(),
             })
-            .report()
+            .into_report()
     }
 
     pub fn get_account_ref_opt<'env, 'name>(
@@ -346,7 +346,7 @@ impl Env {
                 (Some(_), None) => Err(EnvError::AccountNotConfigured {
                     name: name.to_owned(),
                 })
-                .report()
+                .into_report()
                 .attach(Suggestion("Use `rustshop configure account`"))?,
             },
         )

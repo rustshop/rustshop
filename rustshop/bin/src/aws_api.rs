@@ -153,11 +153,13 @@ impl Aws {
     {
         let output = self.run_cmd_raw(args, ignore_254)?;
         Ok(if let Some(output) = output {
-            Some(serde_json::from_slice(&output).report().change_context(
-                AwsError::ResposeDeserialization {
-                    cmd: args.iter().map(ToString::to_string).collect(),
-                },
-            )?)
+            Some(
+                serde_json::from_slice(&output)
+                    .into_report()
+                    .change_context(AwsError::ResposeDeserialization {
+                        cmd: args.iter().map(ToString::to_string).collect(),
+                    })?,
+            )
         } else {
             None
         })
@@ -183,7 +185,7 @@ impl Aws {
             cmd.args(args);
 
             trace!("Running: {:?}", cmd);
-            cmd.output().report().change_context(AwsError::Io)?
+            cmd.output().into_report().change_context(AwsError::Io)?
         };
 
         trace!("Status code: {:?}", output.status.code());
@@ -250,7 +252,7 @@ impl Aws {
             )?
             .ok_or(AwsError::WrongResponse)?,
         )
-        .report()
+        .into_report()
         .change_context(AwsError::WrongResponse)?)
     }
 
@@ -302,7 +304,7 @@ impl Aws {
             self.run_cmd_raw(&["configure", "set", name, value], true)?
                 .ok_or(AwsError::WrongResponse)?,
         )
-        .report()
+        .into_report()
         .change_context(AwsError::WrongResponse)?;
         Ok(())
     }

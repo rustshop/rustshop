@@ -50,7 +50,7 @@ fn parse_email(email: &str) -> AwsResult<EmailParts> {
     let (user, domain) = email
         .split_once("@")
         .ok_or(AwsError::Io)
-        .report()
+        .into_report()
         .attach_printable_lazy(|| format!("Email does not contain `@`: {email}"))?;
     Ok(EmailParts {
         user: user.to_owned(),
@@ -95,13 +95,13 @@ pub fn bootstrap_account(
     email_opts: &EmailBootstrapOpts,
 ) -> AwsResult<String> {
     let cf_bootstrap_terraform_file = create_cf_bootstrap_file(CF_BOOTSTRAP_TERRAFORM_YAML)
-        .report()
+        .into_report()
         .change_context(AwsError::Io)?;
     let cf_bootstrap_cloudtrail_file = create_cf_bootstrap_file(CF_BOOTSTRAP_CLOUDTRAIL_YAML)
-        .report()
+        .into_report()
         .change_context(AwsError::Io)?;
     let cf_bootstrap_kops_file = create_cf_bootstrap_file(CF_BOOTSTRAP_KOPS_YAML)
-        .report()
+        .into_report()
         .change_context(AwsError::Io)?;
 
     let aws = aws_api::Aws::new(Some(profile.to_owned()), aws_region.to_string());
@@ -137,7 +137,7 @@ pub fn bootstrap_account(
                     continue;
                 }
                 aws_api::Status::Other => {
-                    Err(AwsError::WrongResponse).report().attach_printable_lazy(
+                    Err(AwsError::WrongResponse).into_report().attach_printable_lazy(
                         ||
                         format!("Account {} in unknown status. Correct manually in AWS console and try again.", account.name)
                     )?;
@@ -271,7 +271,7 @@ pub fn bootstrap_cluster(
             );
             break zone;
         } else if !create_hosted_zone {
-            Err(AppError::Other).report().attach_printable_lazy(|| {
+            Err(AppError::Other).into_report().attach_printable_lazy(|| {
                 "Existing zone not detected. Rerun wth `--create-hosted-zone` to create"
             })?;
         } else {
@@ -337,7 +337,7 @@ pub fn bootstrap_cluster(
     cmd.args(other_args);
 
     trace!("Run: {cmd:?}");
-    let status = cmd.output().report().change_context(AppError::Other)?;
+    let status = cmd.output().into_report().change_context(AppError::Other)?;
 
     if !status.status.success() {
         bail!(AppError::CommandFailed {
