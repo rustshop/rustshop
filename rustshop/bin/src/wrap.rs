@@ -50,6 +50,16 @@ pub fn exec_wrapped_bin(bin: OsString, args: Vec<OsString>) -> WrapResult<()> {
 
     let env = Env::load().change_context(WrapError::EnvFailure)?;
 
+    if !env.user_yaml_path().exists() {
+        info!(
+            "Rustshop user settings not configured yet."
+        );
+        trace!("Exec: {cmd:?}");
+        Err(cmd.args(&args).exec())
+            .into_report()
+            .change_context(WrapError::ExecFailed)?;
+    }
+
     let context = env
         .get_context_account()
         .change_context(WrapError::EnvFailure)?;
