@@ -17,13 +17,9 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    naersk = {
-      url = "github:nix-community/naersk";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
   };
 
-  outputs = { self, naersk, nixpkgs, flake-utils, flake-compat, fenix, crane }:
+  outputs = { self, nixpkgs, flake-utils, flake-compat, fenix, crane }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs {
