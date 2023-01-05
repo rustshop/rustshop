@@ -143,7 +143,10 @@ Help and feedback: https://github.com/rustshop/rustshop/discussions/categories/h
 and not from the root account root user!
 
 `aws` command should be available in shell and you can configure a profile
-using `aws configure --profile <shopname>-root` like this:
+using `env RUSTSHOP_NO_BIN_WRAP=true aws configure --profile <shopname>-root` like this:
+
+TODO: The `env RUSTSHOP_NO_BIN_WRAP=true` is needed because shop config is not yet
+configured which messes up with `aws` wrapper.
 
 ```
 infra$ aws configure
@@ -163,9 +166,17 @@ You can use `aws configure list-profiles` to list all profiles.
 Run:
 
 ```sh
-shop bootstrap shop --domain <domain> --email <email>
+shop bootstrap shop --domain <domain> --email <email> <shopname>
 shop bootstrap account prod --email <email>
 ```
+
+Example:
+
+```sh
+shop bootstrap shop --domain rustshop.org --email admin@rustshop.org rustshop
+shop bootstrap account prod --email admin@rustshop.org
+
+````
 
 Follow the output, and in case of any issues
 [try asking for help](https://github.com/rustshop/rustshop/discussions/categories/help-general).
