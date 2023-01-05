@@ -63,22 +63,17 @@ pub fn exec_wrapped_bin(bin: OsString, args: Vec<OsString>) -> WrapResult<()> {
         info!("Executing with `terraform init` workaround");
 
         cmd.args(&[
-            "-backend-config",
             &format!(
-                "bucket={}-bootstrap-terraform-state",
+                "-backend-config=bucket={}-bootstrap-terraform-state",
                 account_cfg.shop.bootstrap_name
             ),
-            "-backend-config",
-            &format!("key={}.tfstate", account_cfg.shop.bootstrap_name),
-            "-backend-config",
+            &format!("-backend-config=key={}.tfstate", account_cfg.shop.bootstrap_name),
             &format!(
-                "dynamodb_table={}-bootstrap-terraform",
+                "-backend-config=dynamodb_table={}-bootstrap-terraform",
                 account_cfg.shop.bootstrap_name
             ),
-            "-backend-config",
-            &format!("profile={}", account_cfg.user.aws_profile),
-            "-backend-config",
-            &format!("region={}", account_cfg.shop.bootstrap_aws_region),
+            &format!("-backend-config=profile={}", account_cfg.user.aws_profile),
+            &format!("-backend-config=region={}", account_cfg.shop.bootstrap_aws_region),
         ]);
     }
 
