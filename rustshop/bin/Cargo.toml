@@ -19,7 +19,7 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 rustshop-env = { version = "*", path = "../env/" }
 clap = { version = "3.1.6", features = [ "derive", "env" ] }
 clap_complete = "3.2.3"
-error-stack = "0.2.4"
+error-stack = { version = "0.2.4", default-features = false, features = [ "std" ] }
 derive_more = "0.99.17"
 serde = "1.0.138"
 serde_json = "1.0.82"
