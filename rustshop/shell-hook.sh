@@ -15,6 +15,3 @@ fi
 if [ -e "$RUSTSHOP_ROOT/.rustshop/user.shrc" ]; then
 . "$RUSTSHOP_ROOT/.rustshop/user.shrc"
 fi
-
-# Completions
-eval "$(rustshop --completions "$(basename "$SHELL")")"
