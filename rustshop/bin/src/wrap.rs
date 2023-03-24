@@ -3,6 +3,7 @@ use std::{
     os::unix::prelude::CommandExt,
     path::PathBuf,
     process::Command,
+    cmp,
 };
 
 use derive_more::Display;
@@ -181,7 +182,7 @@ fn is_kubectl_switch(base_bin: &OsStr, args: &[OsString]) -> bool {
             })
             .next()
             .and_then(|arg| arg.to_str().map(ToString::to_string))
-            .map(|arg| args.len() <= "switch".len() && arg[..] == "switch"[..arg.len()])
+            .map(|arg| args.len() <= "switch".len() && arg[..] == "switch"[..cmp::min("switch".len(), arg.len())])
             .unwrap_or(false)
 }
 
