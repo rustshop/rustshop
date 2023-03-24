@@ -296,8 +296,8 @@ And use spot instances:
 
 ```
 kops get ig
-kops get <masterig> # add `maxPrice: "0.01"
-kops get <nodesig> # add `maxPrice: "0.01"
+kops edit ig <masterig> # add `maxPrice: "0.01"
+kops edit ig <nodesig> # add `maxPrice: "0.01"
 ```
 
 After tweaking and verifing the settings you can deploy the cluster with:
