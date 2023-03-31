@@ -64,18 +64,8 @@
           '';
         });
 
-      in
-      {
-        packages = rec {
-          default = rustshop;
-
-          rustshop = rustshopPkg;
-
-          # alias `rustshop` to just `shop`
-          shop = (pkgs.writeShellScriptBin "shop" "exec -a \"$0\" ${rustshop}/bin/rustshop  \"$@\"");
-
-          # alias `kubectl` to just `kc`
-          kc = (pkgs.writeShellScriptBin "kc" "exec -a \"$0\" ${kubectl}/bin/kubectl \"$@\"");
+        rustshop = rustshopPkg;
+        wrapBins = { pkgs ? pkgs }: {
 
           # wrap to auto inject account envs: terraform
           terraform = (pkgs.writeShellScriptBin "terraform" "exec -a \"$0\" ${rustshop}/bin/rustshop wrap ${pkgs.terraform}/bin/terraform \"$@\"");
@@ -91,7 +81,24 @@
 
           # wrap to auto inject account envs: aws
           helm = (pkgs.writeShellScriptBin "helm" "exec -a \"$0\" ${rustshop}/bin/rustshop wrap ${pkgs.kubernetes-helm}/bin/helm \"$@\"");
+
+          # alias `kubectl` to just `kc`
+          kc = (pkgs.writeShellScriptBin "kc" "exec -a \"$0\" ${rustshop}/bin/rustshop wrap ${pkgs.kubectl}/bin/kubectl \"$@\"");
+
+          # alias `rustshop` to just `shop`
+          shop = (pkgs.writeShellScriptBin "shop" "exec -a \"$0\" ${rustshop}/bin/rustshop  \"$@\"");
         };
+        wrappedBins = wrapBins {
+          inherit pkgs;
+        };
+      in
+      {
+        lib = { inherit wrapBins; };
+
+        packages = {
+          inherit rustshop;
+          default = rustshop;
+        } // wrappedBins;
 
         devShell = pkgs.mkShell {
           buildInputs = cargoArtifacts.buildInputs;
