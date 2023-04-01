@@ -282,15 +282,25 @@ kops create cluster \
   --master-volume-size 8 \
   --node-count 1 \
   --node-size t3a.small \
-  --node-volume-size 8
+  --node-volume-size 8 \
+  --networking=calico --topology public
 ```
 
 If you are a cheapskate like me, you can
 change the EBS volumes to bare minimums with:
 
 ```
-kops edit cluster # + add `volumeSize: 1` on each etcd instances (https://unix.stackexchange.com/a/598838/4389)
+kops edit cluster
 ```
+    
+and add `volumeSize: 1` on each etcd instances (https://unix.stackexchange.com/a/598838/4389), along with
+    
+```
+    manager:
+      backupInterval: 12h0m0s
+```
+    
+to avoid accumulating a lot of backup in the state s3 backup.
 
 And use spot instances:
 
