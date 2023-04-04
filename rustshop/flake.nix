@@ -68,25 +68,25 @@
         wrapBins = { pkgs ? pkgs }: {
 
           # wrap to auto inject account envs: terraform
-          terraform = (pkgs.writeShellScriptBin "terraform" "exec -a \"$0\" ${rustshop}/bin/rustshop wrap ${pkgs.terraform}/bin/terraform \"$@\"");
+          terraform = (pkgs.writeShellScriptBin "terraform" "exec ${rustshop}/bin/rustshop wrap ${pkgs.terraform}/bin/terraform \"$@\"");
 
           # wrap to auto inject account envs: aws
-          aws = (pkgs.writeShellScriptBin "aws" "exec -a \"$0\" ${rustshop}/bin/rustshop wrap ${pkgs.awscli2}/bin/aws \"$@\"");
+          aws = (pkgs.writeShellScriptBin "aws" "exec ${rustshop}/bin/rustshop wrap ${pkgs.awscli2}/bin/aws \"$@\"");
 
           # wrap to auto inject account envs: aws
-          kops = (pkgs.writeShellScriptBin "kops" "exec -a \"$0\" ${rustshop}/bin/rustshop wrap ${pkgs.kops}/bin/kops \"$@\"");
+          kops = (pkgs.writeShellScriptBin "kops" "exec ${rustshop}/bin/rustshop wrap ${pkgs.kops}/bin/kops \"$@\"");
 
           # wrap to auto inject account envs: aws
-          kubectl = (pkgs.writeShellScriptBin "kubectl" "exec -a \"$0\" ${rustshop}/bin/rustshop wrap ${pkgs.kubectl}/bin/kubectl \"$@\"");
+          kubectl = (pkgs.writeShellScriptBin "kubectl" "exec ${rustshop}/bin/rustshop wrap ${pkgs.kubectl}/bin/kubectl \"$@\"");
 
           # wrap to auto inject account envs: aws
-          helm = (pkgs.writeShellScriptBin "helm" "exec -a \"$0\" ${rustshop}/bin/rustshop wrap ${pkgs.kubernetes-helm}/bin/helm \"$@\"");
+          helm = (pkgs.writeShellScriptBin "helm" "exec ${rustshop}/bin/rustshop wrap ${pkgs.kubernetes-helm}/bin/helm \"$@\"");
 
           # alias `kubectl` to just `kc`
-          kc = (pkgs.writeShellScriptBin "kc" "exec -a \"$0\" ${rustshop}/bin/rustshop wrap ${pkgs.kubectl}/bin/kubectl \"$@\"");
+          kc = (pkgs.writeShellScriptBin "kc" "exec ${rustshop}/bin/rustshop wrap ${pkgs.kubectl}/bin/kubectl \"$@\"");
 
           # alias `rustshop` to just `shop`
-          shop = (pkgs.writeShellScriptBin "shop" "exec -a \"$0\" ${rustshop}/bin/rustshop  \"$@\"");
+          shop = (pkgs.writeShellScriptBin "shop" "exec ${rustshop}/bin/rustshop  \"$@\"");
         };
         wrappedBins = wrapBins {
           inherit pkgs;
