@@ -102,7 +102,7 @@ pub fn exec_wrapped_bin(bin: OsString, args: Vec<OsString>) -> WrapResult<()> {
             let cfg = env.get_context().change_context(WrapError::EnvFailure)?;
 
             if is_kubectl_switch(&bin_base_name, &args) {
-                let mut new_cmd = std::process::Command::new("rustshop");
+                let mut new_cmd = std::process::Command::new(std::env::args_os().next().unwrap_or( "rustshop".into()));
                 new_cmd.args(&args);
                 return Err(new_cmd.exec())
                     .into_report()
