@@ -104,6 +104,7 @@ pub fn exec_wrapped_bin(bin: OsString, args: Vec<OsString>) -> WrapResult<()> {
             if is_kubectl_switch(&bin_base_name, &args) {
                 let mut new_cmd = std::process::Command::new(std::env::args_os().next().unwrap_or( "rustshop".into()));
                 new_cmd.args(&args);
+                trace!("Exec: {cmd:?}");
                 return Err(new_cmd.exec())
                     .into_report()
                     .change_context(WrapError::ExecFailed)?;
