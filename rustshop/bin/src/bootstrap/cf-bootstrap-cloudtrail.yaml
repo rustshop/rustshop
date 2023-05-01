@@ -19,7 +19,7 @@ Resources:
         Rules:
           - Id: "ExpirationRule"
             Status: "Enabled"
-            ExpirationInDays: 730
+            ExpirationInDays: 60
 
   # CloudTrail Logs Bucket Policy
   CloudTrailLogsPolicy:
