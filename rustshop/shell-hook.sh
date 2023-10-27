@@ -4,7 +4,7 @@
 
 export RUSTSHOP_ROOT
 
-RUSTSHOP_ROOT=$(pwd)
+RUSTSHOP_ROOT="$(git rev-parse --show-toplevel)"
 
 # execute shop-wide customization script
 if [ -e "$RUSTSHOP_ROOT/.rustshop/shop.shrc" ]; then
