@@ -1,9 +1,9 @@
 use std::{
+    cmp,
     ffi::{OsStr, OsString},
     os::unix::prelude::CommandExt,
     path::PathBuf,
-    process::Command,
-    cmp,
+    process::Command, env,
 };
 
 use derive_more::Display;
@@ -19,6 +19,8 @@ pub enum WrapError {
     ExecFailed,
     #[display(fmt = "Loading rustshop env failed")]
     EnvFailure,
+    #[display(fmt = "Usage error")]
+    UsageError,
 }
 
 impl Context for WrapError {}
@@ -52,9 +54,7 @@ pub fn exec_wrapped_bin(bin: OsString, args: Vec<OsString>) -> WrapResult<()> {
     let env = Env::load().change_context(WrapError::EnvFailure)?;
 
     if !env.user_yaml_path().exists() {
-        info!(
-            "Rustshop user settings not configured yet."
-        );
+        info!("Rustshop user settings not configured yet.");
         trace!("Exec: {cmd:?}");
         Err(cmd.args(&args).exec())
             .into_report()
@@ -69,7 +69,6 @@ pub fn exec_wrapped_bin(bin: OsString, args: Vec<OsString>) -> WrapResult<()> {
         .account
         .expect("account set checked in get_context_account")
         .1;
-
 
     trace!("Setting `aws` cli envs");
     set_aws_envs_on(account_cfg, &mut cmd);
@@ -102,7 +101,9 @@ pub fn exec_wrapped_bin(bin: OsString, args: Vec<OsString>) -> WrapResult<()> {
             let cfg = env.get_context().change_context(WrapError::EnvFailure)?;
 
             if is_kubectl_switch(&bin_base_name, &args) {
-                let mut new_cmd = std::process::Command::new(std::env::args_os().next().unwrap_or( "rustshop".into()));
+                let mut new_cmd = std::process::Command::new(
+                    std::env::args_os().next().unwrap_or("rustshop".into()),
+                );
                 new_cmd.args(&args);
                 trace!("Exec: {cmd:?}");
                 return Err(new_cmd.exec())
@@ -135,18 +136,48 @@ pub fn exec_wrapped_bin(bin: OsString, args: Vec<OsString>) -> WrapResult<()> {
     if is_terraform_init(&bin_base_name, &args) {
         info!("Executing with `terraform init` workaround");
 
+        let key_name = match env::var("RUSTSHOP_TERRAFORM_KEY_FORMAT") {
+            Ok(s) if s == "dirs" => {
+                let cwd = env::current_dir().into_report()
+                    .change_context(WrapError::EnvFailure).attach_printable_lazy(|| format!("Could not get current dir"))?;
+                let mut last_components : Vec<_> = cwd
+                        .components()
+                        .rev()
+                        .take(2)
+                        .filter_map(|component| match component {
+                            std::path::Component::Normal(path) => Some(path.to_string_lossy()),
+                            _ => None
+                        }).collect();
+                last_components.reverse();
+                let key = format!("aws/{}", last_components.join("/"));
+                info!("Using s3 key value:  {key} ");
+                key
+            }
+            Ok(other) => Err(WrapError::UsageError)
+                .into_report().attach_printable_lazy(|| format!("Unknown RUSTSHOP_TERRAFORM_KEY_FORMAT={other}"))?,
+            Err(_) => {
+                info!("Using default s3 key value");
+                account_cfg.shop.bootstrap_name.clone()
+            },
+        };
+
         cmd.args(&[
             &format!(
                 "-backend-config=bucket={}-bootstrap-terraform-state",
                 account_cfg.shop.bootstrap_name
             ),
-            &format!("-backend-config=key={}.tfstate", account_cfg.shop.bootstrap_name),
+            &format!(
+                "-backend-config=key={key_name}.tfstate",
+            ),
             &format!(
                 "-backend-config=dynamodb_table={}-bootstrap-terraform",
                 account_cfg.shop.bootstrap_name
             ),
             &format!("-backend-config=profile={}", account_cfg.user.aws_profile),
-            &format!("-backend-config=region={}", account_cfg.shop.bootstrap_aws_region),
+            &format!(
+                "-backend-config=region={}",
+                account_cfg.shop.bootstrap_aws_region
+            ),
         ]);
     }
 
@@ -183,7 +214,10 @@ fn is_kubectl_switch(base_bin: &OsStr, args: &[OsString]) -> bool {
             })
             .next()
             .and_then(|arg| arg.to_str().map(ToString::to_string))
-            .map(|arg| args.len() <= "switch".len() && arg[..] == "switch"[..cmp::min("switch".len(), arg.len())])
+            .map(|arg| {
+                args.len() <= "switch".len()
+                    && arg[..] == "switch"[..cmp::min("switch".len(), arg.len())]
+            })
             .unwrap_or(false)
 }
 
