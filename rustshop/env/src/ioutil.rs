@@ -4,7 +4,7 @@ use std::{
 };
 
 use derive_more::Display;
-use error_stack::{Context, IntoReport, Result, ResultExt};
+use error_stack::{Context, Result, ResultExt};
 
 #[derive(Debug, Display)]
 pub enum CfgFileIOError {
@@ -25,14 +25,9 @@ where
     T: ::serde::Serialize,
 {
     std::fs::create_dir_all(path.parent().ok_or(CfgFileIOError::RootPath)?)
-        .into_report()
         .change_context(CfgFileIOError::Io)?;
-    let text = serde_yaml::to_string(t)
-        .into_report()
-        .change_context(CfgFileIOError::Serde)?;
-    store_str_to_file(path, &text)
-        .into_report()
-        .change_context(CfgFileIOError::Io)?;
+    let text = serde_yaml::to_string(t).change_context(CfgFileIOError::Serde)?;
+    store_str_to_file(path, &text).change_context(CfgFileIOError::Io)?;
     Ok(())
 }
 
@@ -41,13 +36,9 @@ pub fn read_from_yaml_file<T>(path: &Path) -> Result<T, CfgFileIOError>
 where
     T: ::serde::de::DeserializeOwned,
 {
-    let text = std::fs::read_to_string(path)
-        .into_report()
-        .change_context(CfgFileIOError::Io)?;
+    let text = std::fs::read_to_string(path).change_context(CfgFileIOError::Io)?;
 
-    Ok(serde_yaml::from_str(&text)
-        .into_report()
-        .change_context(CfgFileIOError::Serde)?)
+    Ok(serde_yaml::from_str(&text).change_context(CfgFileIOError::Serde)?)
 }
 
 #[inline]
