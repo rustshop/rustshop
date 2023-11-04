@@ -3,4 +3,4 @@ members = [
 	"env",
 	"bin",
 ]
-
+resolver = "2"

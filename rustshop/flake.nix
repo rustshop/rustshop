@@ -4,67 +4,65 @@
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs";
     flake-utils.url = "github:numtide/flake-utils";
-    crane.url = "github:ipetkov/crane";
-    crane.inputs.nixpkgs.follows = "nixpkgs";
 
-    flake-compat = {
-      url = "github:edolstra/flake-compat";
-      flake = false;
-    };
-
-    fenix = {
-      url = "github:nix-community/fenix";
-      inputs.nixpkgs.follows = "nixpkgs";
+    flakebox = {
+      url = "github:rustshop/flakebox";
     };
   };
 
-  outputs = { self, nixpkgs, flake-utils, flake-compat, fenix, crane }:
+  outputs = { self, nixpkgs, flake-utils, flakebox }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs {
           inherit system;
         };
-        lib = pkgs.lib;
-        stdenv = pkgs.stdenv;
-        fenix-pkgs = fenix.packages.${system};
-        fenix-channel = fenix-pkgs.complete;
 
-        craneLib = (crane.mkLib pkgs).overrideScope' (final: prev: {
-          cargo = fenix-channel.cargo;
-          rustc = fenix-channel.rustc;
-        });
+        projectName = "rustshop";
 
-        commonArgs = {
-          src = ./.;
-          buildInputs = [
-          ] ++ lib.optionals stdenv.isDarwin [
-            pkgs.libiconv
-            pkgs.darwin.apple_sdk.frameworks.Security
-          ];
-          nativeBuildInputs = [
-            pkgs.pkgconfig
-            fenix-channel.rustc
-          ];
+        flakeboxLib = flakebox.lib.${system} {
+          config = {
+            github.ci.buildOutputs = [ ".#ci.${projectName}" ];
+          };
         };
 
-        cargoArtifacts = craneLib.buildDepsOnly (commonArgs // {
-          pname = "rustshop-deps";
-          doCheck = false;
-        });
+        buildPaths = [
+          "Cargo.toml"
+          "Cargo.lock"
+          "bin"
+          "env"
+          "templates"
+        ];
 
-        rustshopPkg = craneLib.buildPackage (commonArgs // {
-          inherit cargoArtifacts;
-          pname = "rustshop";
+        buildSrc = flakeboxLib.filterSubPaths {
+          root = builtins.path {
+            name = projectName;
+            path = ./.;
+          };
+          paths = buildPaths;
+        };
 
-          cargoExtraArgs = "--bin rustshop";
+        multiBuild =
+          (flakeboxLib.craneMultiBuild { }) (craneLib':
+            let
+              craneLib = (craneLib'.overrideArgs ({
+                pname = projectName;
+                src = buildSrc;
+                nativeBuildInputs = [ ];
+              } // craneLib'.crateNameFromCargoToml { cargoToml = ./bin/Cargo.toml; }));
+            in
+            {
+              ${projectName} = craneLib.buildPackage {
 
-          postInstall = ''
-            mkdir -p "$out/usr/share/rustshop"
-            cp ./shell-hook.sh $out/usr/share/rustshop
-          '';
-        });
+                postInstall = ''
+                  mkdir -p "$out/usr/share/rustshop"
+                  cp ./shell-hook.sh $out/usr/share/rustshop
+                '';
+              };
+            });
 
-        rustshop = rustshopPkg;
+
+
+        rustshop = multiBuild.rustshop;
         wrapBins = { pkgs ? pkgs }: {
 
           # wrap to auto inject account envs: terraform
@@ -100,18 +98,6 @@
           default = rustshop;
         } // wrappedBins;
 
-        devShell = pkgs.mkShell {
-          buildInputs = cargoArtifacts.buildInputs;
-          nativeBuildInputs = cargoArtifacts.nativeBuildInputs ++ [
-            fenix-pkgs.rust-analyzer
-            fenix-channel.rustfmt
-            fenix-channel.rustc
-            fenix-channel.cargo
-
-            pkgs.rnix-lsp
-            pkgs.nodePackages.bash-language-server
-          ];
-          RUST_SRC_PATH = "${fenix-channel.rust-src}/lib/rustlib/src/rust/library";
-        };
+        devShells = flakeboxLib.mkShells { };
       });
 }
