@@ -1,5 +1,5 @@
 use derive_more::Display;
-use error_stack::{bail, Context, IntoReport, Result, ResultExt};
+use error_stack::{bail, Context, Result, ResultExt};
 use std::default::Default;
 use std::io;
 use std::ops::{Deref, DerefMut};
@@ -298,15 +298,15 @@ impl Env {
         self.shop.accounts.get_mut(name)
     }
 
-    pub fn get_shop_account_mut<'env, 'name>(
+    pub fn get_shop_account_mut<'env>(
         &'env mut self,
-        name: &'name str,
+        name: &str,
     ) -> EnvResult<&'env mut ShopAccountCfg> {
-        self.get_shop_account_mut_opt(name)
+        Ok(self
+            .get_shop_account_mut_opt(name)
             .ok_or(EnvError::AccountNotConfigured {
                 name: name.to_owned(),
-            })
-            .into_report()
+            })?)
     }
 
     pub fn get_shop_account_ref_opt<'env, 'name>(
@@ -320,11 +320,11 @@ impl Env {
         &'env self,
         name: &'name str,
     ) -> EnvResult<&'env ShopAccountCfg> {
-        self.get_shop_account_ref_opt(name)
+        Ok(self
+            .get_shop_account_ref_opt(name)
             .ok_or(EnvError::AccountNotConfigured {
                 name: name.to_owned(),
-            })
-            .into_report()
+            })?)
     }
 
     pub fn get_account_ref_opt<'env, 'name>(
@@ -346,7 +346,6 @@ impl Env {
                 (Some(_), None) => Err(EnvError::AccountNotConfigured {
                     name: name.to_owned(),
                 })
-                .into_report()
                 .attach(Suggestion("Use `rustshop configure account`"))?,
             },
         )

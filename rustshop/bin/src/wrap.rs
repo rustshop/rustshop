@@ -1,13 +1,13 @@
 use std::{
-    cmp,
+    cmp, env,
     ffi::{OsStr, OsString},
     os::unix::prelude::CommandExt,
     path::PathBuf,
-    process::Command, env,
+    process::Command,
 };
 
 use derive_more::Display;
-use error_stack::{Context, IntoReport, Result, ResultExt};
+use error_stack::{Context, Result, ResultExt};
 use rustshop_env::{AccountCfg, Env, ShopAccountCfg, ShopClusterCfg};
 use tracing::{debug, info, trace};
 
@@ -46,9 +46,7 @@ pub fn exec_wrapped_bin(bin: OsString, args: Vec<OsString>) -> WrapResult<()> {
             "Not modifing the environment - due to env var flag"
         );
         trace!("Exec: {cmd:?}");
-        Err(cmd.args(&args).exec())
-            .into_report()
-            .change_context(WrapError::ExecFailed)?;
+        Err(cmd.args(&args).exec()).change_context(WrapError::ExecFailed)?;
     }
 
     let env = Env::load().change_context(WrapError::EnvFailure)?;
@@ -56,9 +54,7 @@ pub fn exec_wrapped_bin(bin: OsString, args: Vec<OsString>) -> WrapResult<()> {
     if !env.user_yaml_path().exists() {
         info!("Rustshop user settings not configured yet.");
         trace!("Exec: {cmd:?}");
-        Err(cmd.args(&args).exec())
-            .into_report()
-            .change_context(WrapError::ExecFailed)?;
+        Err(cmd.args(&args).exec()).change_context(WrapError::ExecFailed)?;
     }
 
     let context = env
@@ -106,14 +102,12 @@ pub fn exec_wrapped_bin(bin: OsString, args: Vec<OsString>) -> WrapResult<()> {
                 );
                 new_cmd.args(&args);
                 trace!("Exec: {cmd:?}");
-                return Err(new_cmd.exec())
-                    .into_report()
-                    .change_context(WrapError::ExecFailed)?;
+                return Err(new_cmd.exec()).change_context(WrapError::ExecFailed)?;
             }
 
             if let Some(cluster) = cfg.cluster {
                 trace!("Adding `--context` to `kubectl`");
-                cmd.args(&[
+                cmd.args([
                     // well, actually helm named it differently
                     if n == Some("helm") {
                         "--kube-context"
@@ -138,27 +132,30 @@ pub fn exec_wrapped_bin(bin: OsString, args: Vec<OsString>) -> WrapResult<()> {
 
         let key_name = match env::var("RUSTSHOP_TERRAFORM_KEY_FORMAT") {
             Ok(s) if s == "dirs" => {
-                let cwd = env::current_dir().into_report()
-                    .change_context(WrapError::EnvFailure).attach_printable_lazy(|| format!("Could not get current dir"))?;
-                let mut last_components : Vec<_> = cwd
-                        .components()
-                        .rev()
-                        .take(2)
-                        .filter_map(|component| match component {
-                            std::path::Component::Normal(path) => Some(path.to_string_lossy()),
-                            _ => None
-                        }).collect();
+                let cwd = env::current_dir()
+                    .change_context(WrapError::EnvFailure)
+                    .attach_printable_lazy(|| format!("Could not get current dir"))?;
+                let mut last_components: Vec<_> = cwd
+                    .components()
+                    .rev()
+                    .take(2)
+                    .filter_map(|component| match component {
+                        std::path::Component::Normal(path) => Some(path.to_string_lossy()),
+                        _ => None,
+                    })
+                    .collect();
                 last_components.reverse();
                 let key = format!("aws/{}", last_components.join("/"));
                 info!("Using s3 key value:  {key} ");
                 key
             }
-            Ok(other) => Err(WrapError::UsageError)
-                .into_report().attach_printable_lazy(|| format!("Unknown RUSTSHOP_TERRAFORM_KEY_FORMAT={other}"))?,
+            Ok(other) => Err(WrapError::UsageError).attach_printable_lazy(|| {
+                format!("Unknown RUSTSHOP_TERRAFORM_KEY_FORMAT={other}")
+            })?,
             Err(_) => {
                 info!("Using default s3 key value");
                 account_cfg.shop.bootstrap_name.clone()
-            },
+            }
         };
 
         cmd.args(&[
@@ -166,9 +163,7 @@ pub fn exec_wrapped_bin(bin: OsString, args: Vec<OsString>) -> WrapResult<()> {
                 "-backend-config=bucket={}-bootstrap-terraform-state",
                 account_cfg.shop.bootstrap_name
             ),
-            &format!(
-                "-backend-config=key={key_name}.tfstate",
-            ),
+            &format!("-backend-config=key={key_name}.tfstate",),
             &format!(
                 "-backend-config=dynamodb_table={}-bootstrap-terraform",
                 account_cfg.shop.bootstrap_name
@@ -182,9 +177,7 @@ pub fn exec_wrapped_bin(bin: OsString, args: Vec<OsString>) -> WrapResult<()> {
     }
 
     trace!("Exec: {cmd:?}");
-    Err(cmd.exec())
-        .into_report()
-        .change_context(WrapError::ExecFailed)?;
+    Err(cmd.exec()).change_context(WrapError::ExecFailed)?;
 
     Ok(())
 }
