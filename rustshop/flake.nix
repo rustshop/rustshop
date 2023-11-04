@@ -21,6 +21,7 @@
 
         flakeboxLib = flakebox.lib.${system} {
           config = {
+            github.ci.cachixRepo = "rustshop";
             toolchain.channel.default = "complete";
             github.ci.buildOutputs = [ ".#ci.${projectName}" ];
           };
