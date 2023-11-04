@@ -7,3 +7,4 @@ members = [
 	"shopkeeper",
 	"shopkeeper-res-gen",
 ]
+resolver = "2"

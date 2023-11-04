@@ -309,17 +309,11 @@ impl Env {
             })?)
     }
 
-    pub fn get_shop_account_ref_opt<'env>(
-        &'env self,
-        name: &str,
-    ) -> Option<&'env ShopAccountCfg> {
+    pub fn get_shop_account_ref_opt<'env>(&'env self, name: &str) -> Option<&'env ShopAccountCfg> {
         self.shop.accounts.get(name)
     }
 
-    pub fn get_shop_account_ref<'env>(
-        &'env self,
-        name: &str,
-    ) -> EnvResult<&'env ShopAccountCfg> {
+    pub fn get_shop_account_ref<'env>(&'env self, name: &str) -> EnvResult<&'env ShopAccountCfg> {
         Ok(self
             .get_shop_account_ref_opt(name)
             .ok_or(EnvError::AccountNotConfigured {
@@ -381,10 +375,7 @@ impl Env {
         )
     }
 
-    pub fn get_account_ref<'env>(
-        &'env self,
-        name: &str,
-    ) -> EnvResult<EnvAccountRef<'env>> {
+    pub fn get_account_ref<'env>(&'env self, name: &str) -> EnvResult<EnvAccountRef<'env>> {
         Ok(self
             .get_account_ref_opt(name)?
             .ok_or_else(|| EnvError::AccountDoesNotExist {
@@ -392,10 +383,7 @@ impl Env {
             })?)
     }
 
-    pub fn get_account_mut<'env>(
-        &'env mut self,
-        name: &str,
-    ) -> EnvResult<EnvAccountMut<'env>> {
+    pub fn get_account_mut<'env>(&'env mut self, name: &str) -> EnvResult<EnvAccountMut<'env>> {
         Ok(self
             .get_account_mut_opt(name)?
             .ok_or_else(|| EnvError::AccountDoesNotExist {
@@ -518,7 +506,10 @@ impl Env {
         let context_path = context_path.unwrap_or_default();
 
         let account_opt = if let Some(account) = context_path.account {
-            self.shop.accounts.get(&account).map(|account_ref| (account.to_owned(), account_ref))
+            self.shop
+                .accounts
+                .get(&account)
+                .map(|account_ref| (account.to_owned(), account_ref))
         } else {
             None
         };
