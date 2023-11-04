@@ -266,7 +266,7 @@ pub fn bootstrap_cluster(
             break zone;
         } else if !create_hosted_zone {
             Err(AppError::Other).attach_printable_lazy(|| {
-                "Existing zone not detected. Rerun wth `--create-hosted-zone` to create"
+                "Existing zone not detected. Rerun with `--create-hosted-zone` to create"
             })?;
         } else {
             retry(|| {

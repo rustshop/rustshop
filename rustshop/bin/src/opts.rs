@@ -11,7 +11,7 @@ pub struct Completions {
 }
 
 impl Completions {
-    pub fn handle_complections_and_maybe_exit() {
+    pub fn handle_completions_and_maybe_exit() {
         let opts = Completions::parse();
 
         if let Some(shell) = opts.completions {
@@ -69,7 +69,7 @@ pub enum Commands {
     #[clap(subcommand)]
     Get(GetCommands),
 
-    /// Wrap a bin supplying rustshop specific arguments and envirionment
+    /// Wrap a bin supplying rustshop specific arguments and environment
     #[clap(hide = true, disable_help_flag = true)]
     #[clap(allow_hyphen_values = true)]
     Wrap { bin: OsString, args: Vec<OsString> },

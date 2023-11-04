@@ -59,7 +59,7 @@ fn main() -> Result<()> {
         .init();
 
     color_eyre::install()?;
-    opts::Completions::handle_complections_and_maybe_exit();
+    opts::Completions::handle_completions_and_maybe_exit();
 
     let opts = Opts::from_args();
 

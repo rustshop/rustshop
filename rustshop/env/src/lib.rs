@@ -108,7 +108,7 @@ impl EnvRoot {
         };
 
         if let Some(_shop_yaml) = self.load_shop_yaml_opt()? {
-            // we don't allow overwritting shop file; this should be done once and once only
+            // we don't allow overwriting shop file; this should be done once and once only
             bail!(EnvError::FileExists {
                 path: self.shop_yaml_path()
             });
@@ -508,13 +508,13 @@ impl Env {
     }
 
     /// Narrow down context to elements that actually exist
-    /// Widen up context when only one sub-element is availble
+    /// Widen up context when only one sub-element is available
     pub fn normalize_context_path(
         &self,
         context_path: Option<ContextYaml>,
         widen: bool,
     ) -> EnvResult<ContextYaml> {
-        // no context is the same as context with everyting empty
+        // no context is the same as context with everything empty
         let context_path = context_path.unwrap_or_default();
 
         let account_opt = if let Some(account) = context_path.account {

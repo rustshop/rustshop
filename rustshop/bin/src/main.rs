@@ -44,7 +44,7 @@ fn main_inner() -> AppResult<()> {
         .with(tracing_subscriber::fmt::layer().with_writer(io::stderr))
         .init();
 
-    opts::Completions::handle_complections_and_maybe_exit();
+    opts::Completions::handle_completions_and_maybe_exit();
 
     match Opts::from_args().command {
         Commands::Add(cmd) => match cmd {
