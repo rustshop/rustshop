@@ -14,7 +14,7 @@ pub enum AwsError {
         fmt = "Response deserialization failed for `aws {}`",
         "cmd.join(\" \")"
     )]
-    ResposeDeserialization { cmd: Vec<String> },
+    ResponseDeserialization { cmd: Vec<String> },
     #[display(fmt = "IO Error")]
     Io,
 
@@ -154,7 +154,7 @@ impl Aws {
         let output = self.run_cmd_raw(args, ignore_254)?;
         Ok(if let Some(output) = output {
             Some(serde_json::from_slice(&output).change_context(
-                AwsError::ResposeDeserialization {
+                AwsError::ResponseDeserialization {
                     cmd: args.iter().map(ToString::to_string).collect(),
                 },
             )?)

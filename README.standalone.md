@@ -8,7 +8,7 @@ drop-in wrapper for `aws`, `terraform`, `kubectl`, etc.
 
 First one needs to setup a new flake or edit the existing
 one to bring the `rustshop` binary in it. Here is a
-diff that should ilustrate the changes:
+diff that should illustrate the changes:
 
 ```diff
 diff --git a/flake.nix b/flake.nix
@@ -47,7 +47,7 @@ After that `nix develop` should bring the `rustshop` tooling into the shel.
 ## Configuring and using it
 
 
-Using `shop add` one can add defintions for all the shop,
+Using `shop add` one can add definitions for all the shop,
 and the accounts&clusters.;
 
 ```

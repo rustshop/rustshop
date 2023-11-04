@@ -1,4 +1,4 @@
-# Bootstraping the shop
+# Bootstrapping the shop
 
 This document describes how to bootstrap an AWS account
 using `rustshop` as a base infrastructure for your own "shop",
@@ -189,7 +189,7 @@ created, with a `<shopname>-prod` sub-account.
 
 Since everything is already installed, basic infrastructure bootstrapped and `rustshop`
 wraps `kops` to automatically supply the account-specific values, bootstrapping
-a fresh kuberentes cluster is very simple.
+a fresh kubernetes cluster is very simple.
 
 Switch to the `prod` account:
 
@@ -202,7 +202,7 @@ shop switch account prod
 `rustshop` can automate the k8s cluster bootstrapping by:
 
 * creating a DNS zone for you and prompting you to configure it
-* creating the `kops` cluster configuration by calling `kops create cluster` with right arugments
+* creating the `kops` cluster configuration by calling `kops create cluster` with right arguments
 
 However since it is a multi-step process that you probably want
 to customize and understand, after this section we will describe
@@ -217,7 +217,7 @@ shop bootstrap cluster prod --minimal
 
 read, the prompts, configure and verify your DNS setup.
 
-Note that at the time of writting `--minimal` option does
+Note that at the time of writing `--minimal` option does
 not lower the etcd EBS size to `1` and doesn't set up spot
 instance settings on the nodes.
 
@@ -310,7 +310,7 @@ kops edit ig <masterig> # add `maxPrice: "0.01"
 kops edit ig <nodesig> # add `maxPrice: "0.01"
 ```
 
-After tweaking and verifing the settings you can deploy the cluster with:
+After tweaking and verifying the settings you can deploy the cluster with:
 
 ```
 kops update cluster --yes

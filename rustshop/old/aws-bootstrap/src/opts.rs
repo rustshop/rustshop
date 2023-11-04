@@ -11,7 +11,7 @@ pub struct Completions {
 }
 
 impl Completions {
-    pub fn handle_complections_and_maybe_exit() {
+    pub fn handle_completions_and_maybe_exit() {
         let opts = Completions::parse();
 
         if let Some(shell) = opts.completions {
@@ -37,7 +37,7 @@ Bootstrap an AWS account:
  * Create new (sub-) accounts in this organization (like `dev` and `prod`)
  * In each account set up a basic cloudformation stack with tiny and cheap
    starting resources and policies that are best practice for self-hosted
-   Infrastrucutre-as-a-Code Terraform-based devops system.
+   Infrastructure-as-a-Code Terraform-based devops system.
 
 Example (create a rustshop-{dev,prod} accounts using AWS CLI `rustshop` profile):
 

@@ -43,7 +43,7 @@ pub fn exec_wrapped_bin(bin: OsString, args: Vec<OsString>) -> WrapResult<()> {
         debug!(
             var = rustshop_env::Env::NO_BIN_WRAP_ENV_NAME,
             val = "true",
-            "Not modifing the environment - due to env var flag"
+            "Not modifying the environment - due to env var flag"
         );
         trace!("Exec: {cmd:?}");
         Err(cmd.args(&args).exec()).change_context(WrapError::ExecFailed)?;
@@ -91,7 +91,7 @@ pub fn exec_wrapped_bin(bin: OsString, args: Vec<OsString>) -> WrapResult<()> {
     }
 
     match bin_base_name.to_str() {
-        // helm and kubectl have the similiar CLI behavior and they tolerate multiple `--context` and `--namespace`
+        // helm and kubectl have the similar CLI behavior and they tolerate multiple `--context` and `--namespace`
         // arguments, with the following ones overrding the previous ones; so we can just add these as defaults
         n @ Some("kubectl") | n @ Some("helm") => {
             let cfg = env.get_context().change_context(WrapError::EnvFailure)?;

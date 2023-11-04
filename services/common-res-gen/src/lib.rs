@@ -39,7 +39,7 @@ pub mod k8s {
 /// A resource that we allow to be generated
 #[derive(From, Debug, Clone)]
 pub enum Resource {
-    Deployement(k8s::Deployment),
+    Deployment(k8s::Deployment),
     Service(k8s::Service),
 }
 
@@ -50,7 +50,7 @@ impl serde::Serialize for Resource {
         S: serde::Serializer,
     {
         match self {
-            Resource::Deployement(r) => r.serialize(serializer),
+            Resource::Deployment(r) => r.serialize(serializer),
             Resource::Service(r) => r.serialize(serializer),
         }
     }
@@ -255,7 +255,7 @@ impl LabelSet {
                     label = name,
                     old = e.get(),
                     new = value;
-                    "Overwritting existing label in a labelset"
+                    "Overwriting existing label in a labelset"
                 );
                 e.insert(value.to_string());
             }
@@ -275,7 +275,7 @@ impl LabelSet {
                         label = name,
                         old = e.get(),
                         new = value;
-                        "Overwritting existing label when copying from a labelset"
+                        "Overwriting existing label when copying from a labelset"
                     );
                     e.insert(value.to_string());
                 }
