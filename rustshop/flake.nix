@@ -94,6 +94,7 @@
       in
       {
         lib = { inherit wrapBins; };
+        legacyPackages = multiBuild;
 
         packages = {
           inherit rustshop;
