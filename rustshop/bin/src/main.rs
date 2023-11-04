@@ -231,18 +231,18 @@ fn bootstrap_account(
     let bootstrap_name = format!("{}-{}", env.get_shop_ref().name, name);
 
     let create_account = if let Some(existing_account) = env
-        .get_account_ref_opt(&name)
+        .get_account_ref_opt(name)
         .change_context(AppError::Other)?
     {
         if existing_account.shop.bootstrap_aws_region != aws_region {
             Err(AppError::Other).attach_printable_lazy(|| {
-                format!("Region is different from the previously used one")
+                "Region is different from the previously used one".to_string()
             })?;
         }
 
         if existing_account.shop.bootstrap_name != bootstrap_name {
             Err(AppError::Other).attach_printable_lazy(|| {
-                format!("Account full name is different from the previously used one")
+                "Account full name is different from the previously used one".to_string()
             })?;
         }
         false
@@ -260,14 +260,14 @@ fn bootstrap_account(
     .change_context(AppError::Other)?;
 
     if create_account {
-        env.add_account(&name, &aws_region)
+        env.add_account(name, aws_region)
             .change_context(AppError::Other)?;
-        env.add_cluster(&name, &name)
+        env.add_cluster(name, name)
             .change_context(AppError::Other)?;
     }
 
     if account_id
-        != bootstrap::get_root_account_id(Some(&profile)).change_context(AppError::Other)?
+        != bootstrap::get_root_account_id(Some(profile)).change_context(AppError::Other)?
     {
         let aws = aws_api::Aws::new(
             Some(bootstrap_name.clone()),
@@ -285,10 +285,10 @@ fn bootstrap_account(
         aws.configure_set("source_profile", profile)
             .change_context(AppError::Other)?;
 
-        env.configure_account(&name, &bootstrap_name)
+        env.configure_account(name, &bootstrap_name)
             .change_context(AppError::Other)?;
     } else {
-        env.configure_account(&name, &profile)
+        env.configure_account(name, profile)
             .change_context(AppError::Other)?;
     }
 

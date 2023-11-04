@@ -236,7 +236,7 @@ impl Aws {
     }
 
     pub(crate) fn create_account(&self, account_name: &str, email: &str) -> AwsResult<String> {
-        Ok(String::from_utf8(
+        String::from_utf8(
             self.run_cmd_raw(
                 &[
                     "organizations",
@@ -250,7 +250,7 @@ impl Aws {
             )?
             .ok_or(AwsError::WrongResponse)?,
         )
-        .change_context(AwsError::WrongResponse)?)
+        .change_context(AwsError::WrongResponse)
     }
 
     pub(crate) fn get_caller_identity(&self) -> AwsResult<CallerIdentity> {
@@ -323,7 +323,7 @@ impl Aws {
         domain: &str,
         caller_id: impl Into<Option<String>>,
     ) -> AwsResult<()> {
-        let caller_id = caller_id.into().unwrap_or_else(|| Self::random_caller_id());
+        let caller_id = caller_id.into().unwrap_or_else(Self::random_caller_id);
 
         self.run_cmd_raw(
             &[

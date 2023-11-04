@@ -38,7 +38,7 @@ where
 {
     let text = std::fs::read_to_string(path).change_context(CfgFileIOError::Io)?;
 
-    Ok(serde_yaml::from_str(&text).change_context(CfgFileIOError::Serde)?)
+    serde_yaml::from_str(&text).change_context(CfgFileIOError::Serde)
 }
 
 #[inline]
