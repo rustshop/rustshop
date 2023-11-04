@@ -251,7 +251,7 @@ impl Env {
             user: root.load_user_yaml_opt()?.unwrap_or_default(),
             context_path: root
                 .load_context_yaml_opt()?
-                .unwrap_or_else(|| ContextYaml::default()),
+                .unwrap_or_else(ContextYaml::default),
 
             shop_dirty: false,
             user_dirty: false,
@@ -290,9 +290,9 @@ impl Env {
         &mut self.shop.shop
     }
 
-    pub fn get_shop_account_mut_opt<'env, 'name>(
+    pub fn get_shop_account_mut_opt<'env>(
         &'env mut self,
-        name: &'name str,
+        name: &str,
     ) -> Option<&'env mut ShopAccountCfg> {
         self.shop_dirty = true;
         self.shop.accounts.get_mut(name)
@@ -309,16 +309,16 @@ impl Env {
             })?)
     }
 
-    pub fn get_shop_account_ref_opt<'env, 'name>(
+    pub fn get_shop_account_ref_opt<'env>(
         &'env self,
-        name: &'name str,
+        name: &str,
     ) -> Option<&'env ShopAccountCfg> {
         self.shop.accounts.get(name)
     }
 
-    pub fn get_shop_account_ref<'env, 'name>(
+    pub fn get_shop_account_ref<'env>(
         &'env self,
-        name: &'name str,
+        name: &str,
     ) -> EnvResult<&'env ShopAccountCfg> {
         Ok(self
             .get_shop_account_ref_opt(name)
@@ -327,9 +327,9 @@ impl Env {
             })?)
     }
 
-    pub fn get_account_ref_opt<'env, 'name>(
+    pub fn get_account_ref_opt<'env>(
         &'env self,
-        name: &'name str,
+        name: &str,
     ) -> EnvResult<Option<EnvAccountRef<'env>>> {
         Ok(
             match (self.shop.accounts.get(name), self.user.accounts.get(name)) {
@@ -351,9 +351,9 @@ impl Env {
         )
     }
 
-    pub fn get_account_mut_opt<'env, 'name>(
+    pub fn get_account_mut_opt<'env>(
         &'env mut self,
-        name: &'name str,
+        name: &str,
     ) -> EnvResult<Option<EnvAccountMut<'env>>> {
         Ok(
             match (
@@ -381,9 +381,9 @@ impl Env {
         )
     }
 
-    pub fn get_account_ref<'env, 'name>(
+    pub fn get_account_ref<'env>(
         &'env self,
-        name: &'name str,
+        name: &str,
     ) -> EnvResult<EnvAccountRef<'env>> {
         Ok(self
             .get_account_ref_opt(name)?
@@ -392,9 +392,9 @@ impl Env {
             })?)
     }
 
-    pub fn get_account_mut<'env, 'name>(
+    pub fn get_account_mut<'env>(
         &'env mut self,
-        name: &'name str,
+        name: &str,
     ) -> EnvResult<EnvAccountMut<'env>> {
         Ok(self
             .get_account_mut_opt(name)?
@@ -436,7 +436,7 @@ impl Env {
 
         let shop_domain = self.shop.shop.domain.clone();
 
-        let account_cfg = self.get_shop_account_mut(&account_name)?;
+        let account_cfg = self.get_shop_account_mut(account_name)?;
 
         if let Some(_cluster_ref) = account_cfg.clusters.get(cluster_name) {
             bail!(EnvError::ClusterExists {
@@ -493,7 +493,7 @@ impl Env {
         } else {
             self.get_context()?
                 .account
-                .ok_or_else(|| EnvError::AccountNotSet)?
+                .ok_or(EnvError::AccountNotSet)?
                 .0
                 .to_owned()
         };
@@ -515,14 +515,10 @@ impl Env {
         widen: bool,
     ) -> EnvResult<ContextYaml> {
         // no context is the same as context with everyting empty
-        let context_path = context_path.unwrap_or(ContextYaml::default());
+        let context_path = context_path.unwrap_or_default();
 
         let account_opt = if let Some(account) = context_path.account {
-            if let Some(account_ref) = self.shop.accounts.get(&account) {
-                Some((account.to_owned(), account_ref))
-            } else {
-                None
-            }
+            self.shop.accounts.get(&account).map(|account_ref| (account.to_owned(), account_ref))
         } else {
             None
         };
@@ -576,7 +572,7 @@ impl Env {
 
     pub fn resolve_context_path(&self, context_path: &ContextYaml) -> EnvResult<EnvContext> {
         let account = if let Some(account) = &context_path.account {
-            if let Some(account_ref) = self.get_account_ref_opt(&account)? {
+            if let Some(account_ref) = self.get_account_ref_opt(account)? {
                 (account, account_ref)
             } else {
                 return Ok(EnvContext::default());
@@ -586,7 +582,7 @@ impl Env {
         };
 
         let cluster = if let Some(cluster) = &context_path.cluster {
-            if let Some(cluster_ref) = account.1.get_cluster_ref_opt(&cluster)? {
+            if let Some(cluster_ref) = account.1.get_cluster_ref_opt(cluster)? {
                 (cluster, cluster_ref)
             } else {
                 return Ok(EnvContext {
@@ -712,7 +708,7 @@ impl Env {
             }
         }
 
-        writeln!(w, "")?;
+        writeln!(w)?;
 
         Ok(())
     }
@@ -765,12 +761,12 @@ pub struct EnvContext {
     pub namespace: Option<String>,
 }
 
-impl Into<ContextYaml> for EnvContext {
-    fn into(self) -> ContextYaml {
+impl From<EnvContext> for ContextYaml {
+    fn from(val: EnvContext) -> Self {
         ContextYaml {
-            account: self.account.map(|account| account.0),
-            cluster: self.cluster.map(|cluster| cluster.0),
-            namespace: self.namespace,
+            account: val.account.map(|account| account.0),
+            cluster: val.cluster.map(|cluster| cluster.0),
+            namespace: val.namespace,
         }
     }
 }
@@ -788,7 +784,7 @@ pub type EnvVarResult<T> = Result<T, EnvVarError>;
 impl Context for EnvVarError {}
 
 pub fn load_env_var_opt(name: &str) -> EnvVarResult<Option<String>> {
-    if let Some(val) = std::env::var(name).ok() {
+    if let Ok(val) = std::env::var(name) {
         if val.is_empty() {
             bail!(EnvVarError::Empty {
                 name: name.to_owned(),

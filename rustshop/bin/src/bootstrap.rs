@@ -46,7 +46,7 @@ impl EmailParts {
 
 fn parse_email(email: &str) -> AwsResult<EmailParts> {
     let (user, domain) = email
-        .split_once("@")
+        .split_once('@')
         .ok_or(AwsError::Io)
         .attach_printable_lazy(|| format!("Email does not contain `@`: {email}"))?;
     Ok(EmailParts {
@@ -152,7 +152,7 @@ pub fn bootstrap_account(
     let aws = if account.id == root_account_id {
         aws
     } else {
-        let role = aws.assume_account_root_role(&account)?;
+        let role = aws.assume_account_root_role(account)?;
         aws.with_creds(role.credentials.clone())
     };
 
@@ -160,16 +160,16 @@ pub fn bootstrap_account(
         &aws,
         &account.name,
         "cloudtrail",
-        &cf_bootstrap_cloudtrail_file.path(),
+        cf_bootstrap_cloudtrail_file.path(),
     )?;
     deploy_stack(
         &aws,
         &account.name,
         "terraform",
-        &cf_bootstrap_terraform_file.path(),
+        cf_bootstrap_terraform_file.path(),
     )?;
 
-    deploy_stack(&aws, &account.name, "kops", &cf_bootstrap_kops_file.path())?;
+    deploy_stack(&aws, &account.name, "kops", cf_bootstrap_kops_file.path())?;
 
     Ok(account.id.clone())
 }
@@ -298,7 +298,7 @@ pub fn bootstrap_cluster(
     super::wrap::set_kops_envs_on(&account_cfg.shop, &cluster_cfg, &mut cmd)
         .change_context(AppError::Other)?;
 
-    cmd.args(&[
+    cmd.args([
         "create",
         "cluster",
         "--cloud",
@@ -312,7 +312,7 @@ pub fn bootstrap_cluster(
     ]);
 
     if minimal {
-        cmd.args(&[
+        cmd.args([
             "--master-count",
             "1",
             "--master-size",

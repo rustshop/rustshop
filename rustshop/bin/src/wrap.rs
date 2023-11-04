@@ -102,7 +102,7 @@ pub fn exec_wrapped_bin(bin: OsString, args: Vec<OsString>) -> WrapResult<()> {
                 );
                 new_cmd.args(&args);
                 trace!("Exec: {cmd:?}");
-                return Err(new_cmd.exec()).change_context(WrapError::ExecFailed)?;
+                Err(new_cmd.exec()).change_context(WrapError::ExecFailed)?;
             }
 
             if let Some(cluster) = cfg.cluster {
@@ -118,7 +118,7 @@ pub fn exec_wrapped_bin(bin: OsString, args: Vec<OsString>) -> WrapResult<()> {
                 ]);
                 if let Some(namespace) = cfg.namespace {
                     trace!("Adding `--namespace` to `kubectl`");
-                    cmd.args(&["--namespace", &namespace]);
+                    cmd.args(["--namespace", &namespace]);
                 }
             }
         }
@@ -134,7 +134,7 @@ pub fn exec_wrapped_bin(bin: OsString, args: Vec<OsString>) -> WrapResult<()> {
             Ok(s) if s == "dirs" => {
                 let cwd = env::current_dir()
                     .change_context(WrapError::EnvFailure)
-                    .attach_printable_lazy(|| format!("Could not get current dir"))?;
+                    .attach_printable_lazy(|| "Could not get current dir".to_string())?;
                 let mut last_components: Vec<_> = cwd
                     .components()
                     .rev()
@@ -158,7 +158,7 @@ pub fn exec_wrapped_bin(bin: OsString, args: Vec<OsString>) -> WrapResult<()> {
             }
         };
 
-        cmd.args(&[
+        cmd.args([
             &format!(
                 "-backend-config=bucket={}-bootstrap-terraform-state",
                 account_cfg.shop.bootstrap_name
@@ -284,7 +284,7 @@ pub fn set_kops_envs_on<'cmd>(
     cmd.env("KOPS_STATE_STORE", &kops_state_store);
 
     debug!(KOPS_CLUSTER_NAME = kops_cluster_name, "Setting");
-    cmd.env("KOPS_CLUSTER_NAME", &kops_cluster_name);
+    cmd.env("KOPS_CLUSTER_NAME", kops_cluster_name);
 
     Ok(cmd)
 }
