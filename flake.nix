@@ -2,15 +2,10 @@
   description = "RustShop - a fake shop that you can fork";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-23.05";
     flake-utils.url = "github:numtide/flake-utils";
     crane.url = "github:ipetkov/crane?ref=v0.5.1";
     crane.inputs.nixpkgs.follows = "nixpkgs";
-
-    flake-compat = {
-      url = "github:edolstra/flake-compat";
-      flake = false;
-    };
 
     fenix = {
       url = "github:nix-community/fenix";
@@ -19,7 +14,7 @@
 
   };
 
-  outputs = { self, nixpkgs, flake-utils, flake-compat, fenix, crane }:
+  outputs = { self, nixpkgs, flake-utils, fenix, crane }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs {
@@ -178,6 +173,11 @@
           shopkeeper = resGen "shopkeeper";
         };
 
+        # external project would import `rustshop` as a flake,
+        # but we cheat, at least for now; but it is an external
+        # components, and working on it requires `cd rustshop; nix develop`
+        # as it maintains it's own flake
+        rustshop = (import ./rustshop/default-system.nix) system;
       in
       {
         packages = {
@@ -201,16 +201,19 @@
           inherit workspaceDeps workspaceBuild workspaceTest workspaceClippy;
         };
 
+        legacyPackages = rustshop.legacyPackages.${system};
+
         devShells = {
           default =
-            let
-              # external project would import `rustshop` as a flake,
-              # but we cheat, at least for now; but it is an external
-              # components, and working on it requires `cd rustshop; nix develop`
-              # as it maintains it's own flake
-              rustshop = (import ./rustshop/default-system.nix) system;
-            in
             pkgs.mkShell {
+              inputsFrom = [
+                (rustshop.devShells.${system}.default.overrideAttrs
+                  (prev: {
+                    shellHook = ''
+                      PATH="$PATH:${./.config/flakebox/bin}/"
+                    '';
+                  }))
+              ];
               buildInputs = workspaceDeps.buildInputs;
               nativeBuildInputs = workspaceDeps.nativeBuildInputs ++
                 lib.attrsets.attrValues rustshop.packages."${system}" ++ [
@@ -246,14 +249,7 @@
 
           # this shell is used only in CI, so it should contain minimum amount
           # of stuff to avoid building and caching things we don't need
-          lint = pkgs.mkShell {
-            nativeBuildInputs = [
-              pkgs.rustfmt
-              pkgs.nixpkgs-fmt
-              pkgs.shellcheck
-              pkgs.git
-            ];
-          };
+          lint = rustshop.devShells.${system}.lint;
         };
       });
 }
