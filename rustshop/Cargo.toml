@@ -4,3 +4,11 @@ members = [
 	"bin",
 ]
 resolver = "2"
+
+[profile]
+
+[profile.ci]
+inherits = "dev"
+incremental = false
+debug = "line-tables-only"
+lto = "off"

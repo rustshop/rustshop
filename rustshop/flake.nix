@@ -6,7 +6,7 @@
     flake-utils.url = "github:numtide/flake-utils";
 
     flakebox = {
-      url = "github:rustshop/flakebox?rev=837d18f5d2cf059dc93d5a7c7e62f72be22c957f";
+      url = "github:rustshop/flakebox?rev=36fdb7a2b943b752705953772ef9ec0e2838ffc6";
     };
   };
 
@@ -33,6 +33,7 @@
           "bin"
           "env"
           "templates"
+          "shell-hook.sh"
         ];
 
         buildSrc = flakeboxLib.filterSubPaths {
