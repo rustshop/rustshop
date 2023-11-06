@@ -163,12 +163,18 @@ pub fn exec_wrapped_bin(bin: OsString, args: Vec<OsString>) -> WrapResult<()> {
                 "-backend-config=bucket={}-bootstrap-terraform-state",
                 account_cfg.shop.bootstrap_name
             ),
-            &format!("-backend-config=key={key_name}.tfstate",),
+            &format!(
+                "-backend-config=key={}.tfstate", 
+                key_name
+            ),
             &format!(
                 "-backend-config=dynamodb_table={}-bootstrap-terraform",
                 account_cfg.shop.bootstrap_name
             ),
-            &format!("-backend-config=profile={}", account_cfg.user.aws_profile),
+            &format!(
+                "-backend-config=profile={}", 
+                account_cfg.user.aws_profile
+            ),
             &format!(
                 "-backend-config=region={}",
                 account_cfg.shop.bootstrap_aws_region
