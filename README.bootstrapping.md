@@ -156,7 +156,7 @@ Default region name [None]: us-east-1
 Default output format [None]:
 ```
 
-The Key ID and Secrect Access Key should be provided to you
+The Key ID and Secret Access Key should be provided to you
 when you created `iamadmin` user.
 
 You can use `aws configure list-profiles` to list all profiles.

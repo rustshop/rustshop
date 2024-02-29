@@ -2,7 +2,7 @@
   description = "RustShop - a fake shop that you can fork";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-23.11";
+    nixpkgs.url = "nixpkgs/nixos-23.11";
     flake-utils.url = "github:numtide/flake-utils";
     crane.url = "github:ipetkov/crane?ref=v0.5.1";
     crane.inputs.nixpkgs.follows = "nixpkgs";
@@ -11,14 +11,14 @@
       url = "github:nix-community/fenix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-
   };
 
-  outputs = { self, nixpkgs, flake-utils, fenix, crane }:
+  outputs = { self, nixpkgs, flake-utils, fenix, crane, ... }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs {
           inherit system;
+          config.allowUnfree = true;
         };
         lib = pkgs.lib;
 
@@ -100,7 +100,7 @@
           buildInputs = [
           ];
           nativeBuildInputs = [
-            pkgs.pkgconfig
+            pkgs.pkg-config
             fenix-channel.rustc
           ];
         };
@@ -211,12 +211,12 @@
                   (prev: {
                     shellHook = ''
                       PATH="$PATH:${./.config/flakebox/bin}/"
-                    '';
+                    '' + prev.shellHook;
                   }))
               ];
               buildInputs = workspaceDeps.buildInputs;
               nativeBuildInputs = workspaceDeps.nativeBuildInputs ++
-                lib.attrsets.attrValues rustshop.packages."${system}" ++ [
+                lib.attrsets.attrValues rustshop.packages.${system} ++ [
 
                 # extra binaries here
                 fenix-toolchain
