@@ -2,7 +2,7 @@
   description = "RustShop - a fake shop that you can fork";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-23.05";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-23.11";
     flake-utils.url = "github:numtide/flake-utils";
     crane.url = "github:ipetkov/crane?ref=v0.5.1";
     crane.inputs.nixpkgs.follows = "nixpkgs";
