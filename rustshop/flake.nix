@@ -2,19 +2,26 @@
   description = "rustshop infra utilities";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs";
+    nixpkgs.url = "nixpkgs/nixos-23.11";
     flake-utils.url = "github:numtide/flake-utils";
 
+    # this is needed for systems default-system.nix
+    flake-compat = {
+      url = "github:edolstra/flake-compat";
+      flake = false;
+    };
+
     flakebox = {
-      url = "github:rustshop/flakebox?rev=36fdb7a2b943b752705953772ef9ec0e2838ffc6";
+      url = "github:dpc/flakebox?rev=49117df15209701f3e13ba2bcf514b550955e7b4";
     };
   };
 
-  outputs = { self, nixpkgs, flake-utils, flakebox }:
+  outputs = { self, nixpkgs, flake-utils, flakebox, ... }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs {
           inherit system;
+          config.allowUnfree = true;
         };
 
         projectName = "rustshop";
